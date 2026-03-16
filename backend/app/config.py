@@ -1,0 +1,38 @@
+from pydantic_settings import BaseSettings
+from functools import lru_cache
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from .env file."""
+
+    # Supabase
+    SUPABASE_URL: str = ""
+    SUPABASE_KEY: str = ""
+
+    # Upstash Redis
+    UPSTASH_REDIS_URL: str = ""
+
+    # Cloudflare R2
+    R2_ENDPOINT: str = ""
+    R2_ACCESS_KEY: str = ""
+    R2_SECRET_KEY: str = ""
+    R2_BUCKET: str = ""
+
+    # Razorpay
+    RAZORPAY_KEY_ID: str = ""
+    RAZORPAY_KEY_SECRET: str = ""
+
+    # Gemini AI
+    GEMINI_API_KEY: str = ""
+
+    # Resend Email
+    RESEND_API_KEY: str = ""
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
