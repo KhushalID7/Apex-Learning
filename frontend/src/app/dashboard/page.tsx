@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
 export default function DashboardPage() {
@@ -61,19 +62,35 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="border-b border-card-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <Link href="/dashboard" className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             AWT Learning
-          </h1>
-          <div className="flex items-center gap-4">
-            <span className={`rounded-full border px-3 py-1 text-xs font-medium ${rc.color} ${rc.bgColor} ${rc.borderColor}`}>
-              {rc.emoji} {rc.label}
-            </span>
-            <button
-              onClick={signOut}
-              className="rounded-lg border border-card-border px-4 py-2 text-sm text-muted transition-all hover:border-danger/30 hover:text-danger hover:bg-danger/5"
+          </Link>
+          <div className="flex items-center gap-6">
+            {profile.role === "teacher" && (
+              <Link
+                href="/dashboard/courses"
+                className="text-sm text-muted transition-colors hover:text-foreground"
+              >
+                My Courses
+              </Link>
+            )}
+            <Link
+              href="/courses"
+              className="text-sm text-muted transition-colors hover:text-foreground"
             >
-              Sign Out
-            </button>
+              Browse Courses
+            </Link>
+            <div className="flex items-center gap-4">
+              <span className={`rounded-full border px-3 py-1 text-xs font-medium ${rc.color} ${rc.bgColor} ${rc.borderColor}`}>
+                {rc.emoji} {rc.label}
+              </span>
+              <button
+                onClick={signOut}
+                className="rounded-lg border border-card-border px-4 py-2 text-sm text-muted transition-all hover:border-danger/30 hover:text-danger hover:bg-danger/5"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -134,10 +151,40 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {/* Quick Actions / Navigation */}
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {profile.role === "teacher" && (
+            <Link
+              href="/dashboard/courses"
+              className="rounded-xl border border-card-border bg-card/60 p-6 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted">Manage Courses</p>
+                  <p className="mt-1 text-lg font-bold text-foreground">My Courses</p>
+                </div>
+                <span className="text-3xl">📚</span>
+              </div>
+            </Link>
+          )}
+          <Link
+            href="/courses"
+            className="rounded-xl border border-card-border bg-card/60 p-6 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted">Browse & Learn</p>
+                <p className="mt-1 text-lg font-bold text-foreground">All Courses</p>
+              </div>
+              <span className="text-3xl">🎒</span>
+            </div>
+          </Link>
+        </div>
+
         {/* Placeholder message */}
         <div className="mt-8 rounded-xl border border-dashed border-card-border p-8 text-center">
           <p className="text-muted text-sm">
-            🚧 Course management, video streaming, and more features coming in the next phases.
+            🎉 Phase 2 (Course Management) is live! Next: Student enrollment (Phase 3)
           </p>
         </div>
       </main>

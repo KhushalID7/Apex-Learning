@@ -7,7 +7,8 @@ class Settings(BaseSettings):
 
     # Supabase
     SUPABASE_URL: str = ""
-    SUPABASE_KEY: str = ""
+    SUPABASE_KEY: str = ""  # Public/Anon key
+    SUPABASE_SERVICE_KEY: str = ""  # Service role key (bypasses RLS)
 
     # Upstash Redis
     UPSTASH_REDIS_URL: str = ""
