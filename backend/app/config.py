@@ -13,11 +13,9 @@ class Settings(BaseSettings):
     # Upstash Redis
     UPSTASH_REDIS_URL: str = ""
 
-    # Cloudflare R2
-    R2_ENDPOINT: str = ""
-    R2_ACCESS_KEY: str = ""
-    R2_SECRET_KEY: str = ""
-    R2_BUCKET: str = ""
+    # Azure Blob Storage
+    AZURE_STORAGE_CONNECTION_STRING: str = ""
+    AZURE_CONTAINER_NAME: str = "project-files"
 
     # Razorpay
     RAZORPAY_KEY_ID: str = ""

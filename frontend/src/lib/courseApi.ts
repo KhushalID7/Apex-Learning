@@ -12,6 +12,17 @@ export interface Course {
   created_at: string;
 }
 
+export interface Lecture {
+  id: string;
+  course_id: string;
+  title: string;
+  description?: string;
+  video_url?: string;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export async function createCourse(
   course: {
     title: string;
@@ -107,4 +118,49 @@ export async function getCourseById(courseId: string): Promise<Course> {
   }
 
   return response.json();
+}
+
+export async function getCourseLectures(courseId: string): Promise<Lecture[]> {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/lectures`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch lectures");
+  }
+
+  return response.json();
+}
+
+export async function uploadLecture(
+  courseId: string,
+  data: FormData,
+  token: string
+): Promise<Lecture> {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/lectures`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: data,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to upload lecture");
+  }
+
+  return response.json();
+}
+
+export async function deleteLecture(lectureId: string, token: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/courses/lectures/${lectureId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to delete lecture");
+  }
 }
