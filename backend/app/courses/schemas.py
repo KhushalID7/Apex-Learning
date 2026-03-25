@@ -24,6 +24,7 @@ class CourseResponse(BaseModel):
     """Response model for a course."""
     id: str
     teacher_id: str
+    teacher_name: Optional[str] = None
     title: str
     description: Optional[str] = None
     price: float

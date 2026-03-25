@@ -53,7 +53,14 @@ async def list_published_courses():
             .order("created_at", desc=True)
             .execute()
         )
-        return response.data
+        courses_data = response.data
+        if courses_data:
+            teacher_ids = list(set([c["teacher_id"] for c in courses_data]))
+            profiles_res = supabase.table("profiles").select("id, full_name").in_("id", teacher_ids).execute()
+            profiles_map = {p["id"]: p.get("full_name") for p in profiles_res.data} if profiles_res.data else {}
+            for c in courses_data:
+                c["teacher_name"] = profiles_map.get(c["teacher_id"])
+        return courses_data
 
     except Exception as e:
         raise HTTPException(
@@ -75,7 +82,48 @@ async def list_my_courses(
             .order("created_at", desc=True)
             .execute()
         )
-        return response.data
+        courses_data = response.data
+        if courses_data:
+            # For list_my_courses, teacher_id is always current_user["id"], but we fetch full_name
+            profile_res = supabase.table("profiles").select("full_name").eq("id", current_user["id"]).single().execute()
+            full_name = profile_res.data.get("full_name") if profile_res.data else None
+            for c in courses_data:
+                c["teacher_name"] = full_name
+        return courses_data
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.get("/enrolled", response_model=List[CourseResponse])
+async def list_enrolled_courses(
+    current_user: dict = Depends(require_role("student")),
+):
+    """List all courses the current student is enrolled in."""
+    try:
+        # Fetch enrollments
+        enrollments_res = supabase_admin.table("enrollments").select("course_id").eq("student_id", current_user["id"]).execute()
+        
+        if not enrollments_res.data:
+            return []
+            
+        course_ids = [e["course_id"] for e in enrollments_res.data]
+        
+        # Fetch courses
+        courses_res = supabase.table("courses").select("*").in_("id", course_ids).order("created_at", desc=True).execute()
+        courses_data = courses_res.data
+        
+        if courses_data:
+            teacher_ids = list(set([c["teacher_id"] for c in courses_data]))
+            profiles_res = supabase.table("profiles").select("id, full_name").in_("id", teacher_ids).execute()
+            profiles_map = {p["id"]: p.get("full_name") for p in profiles_res.data} if profiles_res.data else {}
+            for c in courses_data:
+                c["teacher_name"] = profiles_map.get(c["teacher_id"])
+                
+        return courses_data
 
     except Exception as e:
         raise HTTPException(
@@ -103,6 +151,14 @@ async def get_course(course_id: str):
             )
 
         course = response.data
+        
+        # Fetch profile
+        if "teacher_id" in course:
+            profile_res = supabase.table("profiles").select("full_name").eq("id", course["teacher_id"]).execute()
+            if profile_res.data and len(profile_res.data) > 0:
+                course["teacher_name"] = profile_res.data[0].get("full_name")
+            else:
+                course["teacher_name"] = None
 
         # If the course is not published, we still allow viewing it
         # (enforcement happens at the database RLS level)
@@ -217,3 +273,93 @@ async def delete_course(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+
+@router.post("/{course_id}/enroll", status_code=status.HTTP_201_CREATED)
+async def enroll_in_course(
+    course_id: str,
+    current_user: dict = Depends(require_role("student"))
+):
+    """Enroll a student in a course."""
+    try:
+        # Check if course exists and is published
+        course_check = supabase.table("courses").select("id, is_published").eq("id", course_id).single().execute()
+        if not course_check.data or not course_check.data.get("is_published"):
+            raise HTTPException(status_code=404, detail="Course not found or not published")
+
+        # Insert enrollment
+        response = supabase_admin.table("enrollments").insert({
+            "student_id": current_user["id"],
+            "course_id": course_id
+        }).execute()
+
+        if not response.data:
+            raise HTTPException(status_code=400, detail="Failed to enroll")
+        
+        return {"message": "Successfully enrolled", "enrollment": response.data[0]}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        if "duplicate key value" in str(e) or "enrollments_student_id_course_id_key" in str(e):
+            raise HTTPException(status_code=400, detail="Already enrolled in this course")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/{course_id}/enrollment-status")
+async def check_enrollment_status(
+    course_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Check if the current user is enrolled in the course."""
+    if current_user["role"] != "student":
+        return {"is_enrolled": False}
+
+    try:
+        response = supabase_admin.table("enrollments").select("id").eq("course_id", course_id).eq("student_id", current_user["id"]).execute()
+        
+        is_enrolled = len(response.data) > 0
+        return {"is_enrolled": is_enrolled}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/{course_id}/progress")
+async def get_course_progress(
+    course_id: str,
+    current_user: dict = Depends(require_role("student"))
+):
+    """Get the list of completed lecture IDs for the current student in a course."""
+    try:
+        response = supabase_admin.table("progress").select("lecture_id").eq("course_id", course_id).eq("student_id", current_user["id"]).execute()
+        completed_ids = [row["lecture_id"] for row in response.data] if response.data else []
+        return {"completed_lecture_ids": completed_ids}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{course_id}/lectures/{lecture_id}/progress")
+async def toggle_lecture_progress(
+    course_id: str,
+    lecture_id: str,
+    completed: bool,
+    current_user: dict = Depends(require_role("student"))
+):
+    """Mark a lecture as complete or incomplete."""
+    try:
+        if completed:
+            # Mark complete
+            response = supabase_admin.table("progress").insert({
+                "student_id": current_user["id"],
+                "course_id": course_id,
+                "lecture_id": lecture_id
+            }).execute()
+        else:
+            # Mark incomplete
+            response = supabase_admin.table("progress").delete().eq("student_id", current_user["id"]).eq("lecture_id", lecture_id).execute()
+        
+        return {"message": "Progress updated successfully"}
+    except Exception as e:
+        if "duplicate key value" in str(e) or "progress_student_id_lecture_id_key" in str(e):
+            return {"message": "Progress already logged"}
+        raise HTTPException(status_code=400, detail=str(e))

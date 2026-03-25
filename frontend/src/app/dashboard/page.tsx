@@ -152,7 +152,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions / Navigation */}
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 text-left">
           {profile.role === "teacher" && (
             <Link
               href="/dashboard/courses"
@@ -167,25 +167,32 @@ export default function DashboardPage() {
               </div>
             </Link>
           )}
+          {profile.role === "student" && (
+            <Link
+              href="/dashboard/learning"
+              className="rounded-xl border border-card-border bg-card/60 p-6 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted">Continue Learning</p>
+                  <p className="mt-1 text-lg font-bold text-foreground">My Learning</p>
+                </div>
+                <span className="text-3xl">🎒</span>
+              </div>
+            </Link>
+          )}
           <Link
             href="/courses"
             className="rounded-xl border border-card-border bg-card/60 p-6 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted">Browse & Learn</p>
-                <p className="mt-1 text-lg font-bold text-foreground">All Courses</p>
+                <p className="text-sm text-muted">Discover</p>
+                <p className="mt-1 text-lg font-bold text-foreground">Course Catalog</p>
               </div>
-              <span className="text-3xl">🎒</span>
+              <span className="text-3xl">🔍</span>
             </div>
           </Link>
-        </div>
-
-        {/* Placeholder message */}
-        <div className="mt-8 rounded-xl border border-dashed border-card-border p-8 text-center">
-          <p className="text-muted text-sm">
-            🎉 Phase 2 (Course Management) is live! Next: Student enrollment (Phase 3)
-          </p>
         </div>
       </main>
     </div>

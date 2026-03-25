@@ -3,13 +3,39 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { getCourseById, type Course } from "@/lib/courseApi";
+import { getCourseById, enrollInCourse, checkEnrollmentStatus, type Course } from "@/lib/courseApi";
 import { useAuth } from "@/context/AuthContext";
 
 export default function CourseDetailPage() {
   const params = useParams();
   const courseId = params.id as string;
-  const { user, profile } = useAuth();
+  const { user, profile, session } = useAuth();
+
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrollError, setEnrollError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (courseId && session?.access_token && profile?.role === "student") {
+      checkEnrollmentStatus(courseId, session.access_token)
+        .then((data) => setIsEnrolled(data.is_enrolled))
+        .catch(console.error);
+    }
+  }, [courseId, session, profile]);
+
+  const handleEnroll = async () => {
+    if (!session?.access_token) return;
+    try {
+      setEnrolling(true);
+      setEnrollError(null);
+      await enrollInCourse(courseId, session.access_token);
+      setIsEnrolled(true);
+    } catch (err) {
+      setEnrollError(err instanceof Error ? err.message : "Failed to enroll");
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
@@ -132,12 +158,13 @@ export default function CourseDetailPage() {
               </div>
             </div>
 
-            {/* Placeholder for Phase 3 (Enrollment) */}
-            <div className="rounded-xl border border-dashed border-card-border p-8 text-center">
-              <p className="text-muted text-sm">
-                📝 Enrollment functionality coming in Phase 3
-              </p>
-            </div>
+            {isEnrolled && (
+              <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-6 text-center">
+                <p className="text-green-500 font-medium">
+                  You are enrolled in this course!
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -149,20 +176,40 @@ export default function CourseDetailPage() {
                 <p className="text-3xl font-bold text-foreground">₹{course.price.toFixed(2)}</p>
               </div>
 
-              {/* Enroll Button (Placeholder) */}
-              <button
-                disabled
-                className="w-full rounded-lg bg-primary/50 px-6 py-3 text-sm font-medium text-white transition-all disabled:opacity-50 cursor-not-allowed"
-                title="Enrollment feature coming in Phase 3"
-              >
-                Enroll Now (Coming Soon)
-              </button>
+              {/* Enroll Button */}
+              {profile?.role === "student" ? (
+                isEnrolled ? (
+                  <button
+                    className="w-full rounded-lg bg-green-500/20 px-6 py-3 text-sm font-medium text-green-500 transition-all cursor-default"
+                    disabled
+                  >
+                    Enrolled
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleEnroll}
+                    disabled={enrolling}
+                    className="w-full rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white transition-all hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {enrolling ? "Enrolling..." : "Enroll Now"}
+                  </button>
+                )
+              ) : (
+                <button
+                    disabled
+                    className="w-full rounded-lg bg-card-border px-6 py-3 text-sm font-medium text-muted transition-all disabled:opacity-50 cursor-not-allowed"
+                    title={profile ? "Only students can enroll" : "Please log in to enroll"}
+                  >
+                    {profile ? "Only Students Can Enroll" : "Log in to Enroll"}
+                </button>
+              )}
+              {enrollError && <p className="text-xs text-danger mt-2">{enrollError}</p>}
 
               {/* Course Info */}
               <div className="mt-8 space-y-4 border-t border-card-border pt-6">
                 <div>
                   <p className="text-xs font-medium text-muted uppercase">Instructor</p>
-                  <p className="text-sm text-foreground">Teacher ID: {course.teacher_id}</p>
+                  <p className="text-sm text-foreground">{course.teacher_name || `Teacher ID: ${course.teacher_id}`}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted uppercase">Created</p>

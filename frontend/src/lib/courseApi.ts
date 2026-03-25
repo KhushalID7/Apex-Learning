@@ -4,6 +4,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 export interface Course {
   id: string;
   teacher_id: string;
+  teacher_name?: string;
   title: string;
   description?: string;
   price: number;
@@ -163,4 +164,70 @@ export async function deleteLecture(lectureId: string, token: string): Promise<v
     const error = await response.json();
     throw new Error(error.detail || "Failed to delete lecture");
   }
+}
+
+export async function enrollInCourse(courseId: string, token: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/enroll`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to enroll in course");
+  }
+
+  return response.json();
+}
+
+export async function checkEnrollmentStatus(courseId: string, token: string): Promise<{ is_enrolled: boolean }> {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/enrollment-status`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to check enrollment status");
+  }
+
+  return response.json();
+}
+
+export async function getEnrolledCourses(token: string): Promise<Course[]> {
+  const response = await fetch(`${API_BASE_URL}/courses/enrolled`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch enrolled courses");
+  }
+
+  return response.json();
+}
+
+export async function getCourseProgress(courseId: string, token: string): Promise<string[]> {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/progress`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error("Failed to fetch progress");
+  const data = await response.json();
+  return data.completed_lecture_ids;
+}
+
+export async function toggleLectureProgress(
+  courseId: string,
+  lectureId: string,
+  completed: boolean,
+  token: string
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/lectures/${lectureId}/progress?completed=${completed}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!response.ok) throw new Error("Failed to update progress");
 }
