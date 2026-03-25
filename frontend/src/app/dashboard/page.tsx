@@ -1,19 +1,42 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { getTeacherStats, type TeacherStats } from "@/lib/courseApi";
+import AnalyticsCharts from "@/components/AnalyticsCharts";
 
 export default function DashboardPage() {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, loading, session, signOut } = useAuth();
   const router = useRouter();
+
+  const [stats, setStats] = useState<TeacherStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [loading, user, router]);
+
+  useEffect(() => {
+    if (session?.access_token && profile?.role === "teacher") {
+      fetchStats();
+    }
+  }, [session, profile]);
+
+  const fetchStats = async () => {
+    try {
+      setStatsLoading(true);
+      const data = await getTeacherStats(session!.access_token);
+      setStats(data);
+    } catch (err) {
+      console.error("Failed to fetch stats", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -117,23 +140,28 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Stats (placeholder for future phases) */}
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* Quick Stats */}
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
           {[
             {
               label: profile.role === "teacher" ? "Courses Created" : "Enrolled Courses",
-              value: "0",
+              value: profile.role === "teacher" ? (statsLoading ? "..." : stats?.total_courses || "0") : "0",
               icon: "📖",
             },
             {
               label: profile.role === "teacher" ? "Total Students" : "Completed",
-              value: "0",
-              icon: "✅",
+              value: profile.role === "teacher" ? (statsLoading ? "..." : stats?.total_enrollments || "0") : "0",
+              icon: "👥",
             },
             {
               label: profile.role === "teacher" ? "Revenue" : "Certificates",
-              value: profile.role === "teacher" ? "₹0" : "0",
-              icon: profile.role === "teacher" ? "💰" : "🏆",
+              value: profile.role === "teacher" ? (statsLoading ? "..." : `₹${stats?.total_revenue || "0"}`) : "0",
+              icon: "💰",
+            },
+            {
+              label: profile.role === "teacher" ? "Avg. Engagement" : "Points",
+              value: profile.role === "teacher" ? (statsLoading ? "..." : `${stats?.average_engagement || "0"}%`) : "0",
+              icon: "📈",
             },
           ].map((stat) => (
             <div
@@ -150,6 +178,11 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* Analytics Charts */}
+        {profile.role === "teacher" && stats && !statsLoading && (
+          <AnalyticsCharts stats={stats} />
+        )}
 
         {/* Quick Actions / Navigation */}
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 text-left">

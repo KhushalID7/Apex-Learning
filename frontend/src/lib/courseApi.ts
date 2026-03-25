@@ -24,6 +24,21 @@ export interface Lecture {
   updated_at: string;
 }
 
+export interface TeacherStats {
+  total_courses: number;
+  total_enrollments: number;
+  total_revenue: number;
+  average_engagement: number;
+  enrollment_trend: { date: string; count: number }[];
+  course_breakdown: {
+    id: string;
+    title: string;
+    students: number;
+    revenue: number;
+    engagement: number;
+  }[];
+}
+
 export async function createCourse(
   course: {
     title: string;
@@ -230,4 +245,18 @@ export async function toggleLectureProgress(
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!response.ok) throw new Error("Failed to update progress");
+}
+
+export async function getTeacherStats(token: string): Promise<TeacherStats> {
+  const response = await fetch(`${API_BASE_URL}/courses/teacher/stats`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch teacher stats");
+  }
+
+  return response.json();
 }
