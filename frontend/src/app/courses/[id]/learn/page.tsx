@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { getCourseById, getCourseLectures, checkEnrollmentStatus, getCourseProgress, toggleLectureProgress, getCourseQuizzes, type Course, type Lecture, type Quiz } from "@/lib/courseApi";
 import LoadingScreen from "@/components/LoadingScreen";
-import { PlayCircle, CheckCircle2, ChevronLeft, Video, PenTool, LayoutList, ChevronRight } from "lucide-react";
+import { PlayCircle, CheckCircle2, ChevronLeft, Video, PenTool, LayoutList, ChevronRight, MessageSquare } from "lucide-react";
+import QASection from "@/components/QASection";
 
 export default function CoursePlayerPage() {
   const params = useParams();
@@ -19,6 +20,7 @@ export default function CoursePlayerPage() {
   const [activeLecture, setActiveLecture] = useState<Lecture | null>(null);
   const [completedLectureIds, setCompletedLectureIds] = useState<Set<string>>(new Set());
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [activeTab, setActiveTab] = useState<"curriculum" | "qa">("curriculum");
   
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -222,19 +224,24 @@ export default function CoursePlayerPage() {
           )}
         </div>
 
-        {/* Sidebar Curriculum */}
+        {/* Sidebar */}
         <aside className="lg:w-96 w-full border-l border-card-border bg-card/40 flex flex-col shrink-0 lg:h-full h-[50vh] overflow-hidden">
-          <div className="p-5 border-b border-card-border bg-card/60 backdrop-blur-md z-10">
-            <h3 className="font-bold text-foreground flex items-center gap-2">
-              <LayoutList className="h-4 w-4 text-primary" />
-              Course Curriculum
-            </h3>
-            <div className="mt-3 flex items-center gap-2 text-xs text-muted font-medium">
-              <span>{lectures.length} Lectures</span>
-              <span className="h-1 w-1 rounded-full bg-muted/50" />
-              <span>{quizzes.length} Quizzes</span>
-            </div>
+          <div className="flex border-b border-card-border bg-card/60 backdrop-blur-md z-10 shrink-0">
+            <button 
+              onClick={() => setActiveTab("curriculum")}
+              className={`flex-1 p-4 font-bold text-sm flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'curriculum' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-muted hover:text-foreground hover:bg-white/5'}`}
+            >
+              <LayoutList className="h-4 w-4" /> Curriculum
+            </button>
+            <button 
+              onClick={() => setActiveTab("qa")}
+              className={`flex-1 p-4 font-bold text-sm flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'qa' ? 'border-accent text-accent bg-accent/5' : 'border-transparent text-muted hover:text-foreground hover:bg-white/5'}`}
+            >
+              <MessageSquare className="h-4 w-4" /> Q&A
+            </button>
           </div>
+          
+          {activeTab === "curriculum" ? (
           
           <div className="flex-1 overflow-y-auto py-3 custom-scrollbar">
             {lectures.length > 0 ? (
@@ -323,6 +330,9 @@ export default function CoursePlayerPage() {
               </div>
             )}
           </div>
+          ) : (
+            <QASection courseId={courseId} activeLectureId={activeLecture?.id} isTeacher={false} />
+          )}
         </aside>
       </div>
     </div>

@@ -489,3 +489,81 @@ export async function generateAIQuiz(
 
   return response.json();
 }
+
+// ─────────────────── Doubts System ───────────────────
+
+export interface DoubtReply {
+  id: string;
+  doubt_id: string;
+  user_id: string;
+  user_name?: string;
+  content: string;
+  created_at: string;
+}
+
+export interface Doubt {
+  id: string;
+  course_id: string;
+  student_id: string;
+  student_name?: string;
+  lecture_id?: string;
+  lecture_title?: string;
+  title: string;
+  description: string;
+  status: string;
+  created_at: string;
+  reply_count: number;
+}
+
+export interface DoubtDetail extends Doubt {
+  replies: DoubtReply[];
+}
+
+export async function askDoubt(
+  courseId: string,
+  data: { lecture_id?: string; title: string; description: string },
+  token: string
+): Promise<Doubt> {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/doubts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error((await response.json()).detail || "Failed to ask doubt");
+  return response.json();
+}
+
+export async function getCourseDoubts(courseId: string, token: string): Promise<Doubt[]> {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/doubts`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error("Failed to fetch doubts");
+  return response.json();
+}
+
+export async function getDoubtDetails(doubtId: string, token: string): Promise<DoubtDetail> {
+  const response = await fetch(`${API_BASE_URL}/doubts/${doubtId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error("Failed to fetch doubt details");
+  return response.json();
+}
+
+export async function replyToDoubt(doubtId: string, content: string, token: string): Promise<DoubtReply> {
+  const response = await fetch(`${API_BASE_URL}/doubts/${doubtId}/replies`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ content }),
+  });
+  if (!response.ok) throw new Error("Failed to post reply");
+  return response.json();
+}
+
+export async function toggleDoubtStatus(doubtId: string, token: string): Promise<Doubt> {
+  const response = await fetch(`${API_BASE_URL}/doubts/${doubtId}/resolve`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error("Failed to update status");
+  return response.json();
+}

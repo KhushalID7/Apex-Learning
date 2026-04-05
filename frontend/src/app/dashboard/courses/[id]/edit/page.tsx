@@ -8,7 +8,7 @@ import { getCourseById, updateCourse, deleteCourse, type Course } from "@/lib/co
 import Navbar from "@/components/Navbar";
 import LoadingScreen from "@/components/LoadingScreen";
 import AlertBanner from "@/components/AlertBanner";
-import { ChevronLeft, Edit2, PlayCircle, PenTool, Image as ImageIcon, FileText, Type, DollarSign, Loader2, Trash2 } from "lucide-react";
+import { ChevronLeft, Edit2, PlayCircle, PenTool, MessageSquare, Image as ImageIcon, FileText, Type, DollarSign, Loader2, Trash2 } from "lucide-react";
 
 export default function EditCoursePage() {
   const { user, profile, loading, session } = useAuth();
@@ -155,7 +155,7 @@ export default function EditCoursePage() {
             <p className="mt-2 text-muted">Manage your course details and settings.</p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Link
               href={`/dashboard/courses/${courseId}/lectures`}
               className="btn-outline flex items-center gap-2"
@@ -169,6 +169,13 @@ export default function EditCoursePage() {
             >
               <PenTool className="h-4 w-4" />
               Manage Quizzes
+            </Link>
+            <Link
+              href={`/dashboard/courses/${courseId}/doubts`}
+              className="btn-outline flex items-center gap-2"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Manage Q&A
             </Link>
           </div>
         </div>
