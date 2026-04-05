@@ -12,40 +12,40 @@
 - [x] Frontend: login & register pages
 - [ ] Test: register → login → access protected route
 
-## Phase 2 — Course Management
-- [ ] `courses` + `lectures` tables in Supabase
-- [ ] Backend: CRUD endpoints for courses (teacher-only create/update)
-- [ ] Backend: lecture upload endpoint (video → R2)
-- [ ] Frontend: teacher dashboard — create course + add lectures
-- [ ] Frontend: student course catalog page
-- [ ] Test: teacher creates course → student sees it
+## Phase 2 — Course Management ✅
+- [x] `courses` + `lectures` tables in Supabase
+- [x] Backend: CRUD endpoints for courses (teacher-only create/update)
+- [x] Backend: lecture upload endpoint (video → Azure Blob)
+- [x] Frontend: teacher dashboard — create course + add lectures
+- [x] Frontend: student course catalog page
+- [x] Test: teacher creates course → student sees it
 
-## Phase 3 — Student Enrollment
-- [ ] `enrollments` table
-- [ ] Backend: enroll endpoint + "my courses" endpoint
+## Phase 3 — Student Enrollment ✅
+- [x] `enrollments` table
+- [x] Backend: enroll endpoint + "my courses" endpoint
 - [ ] Redis cache for enrollment lookups (Upstash)
-- [ ] Frontend: enroll button + enrolled courses page
-- [ ] Test: student enrolls → appears in "my courses"
+- [x] Frontend: enroll button + enrolled courses page
+- [x] Test: student enrolls → appears in "my courses"
 
-## Phase 4 — Video Streaming
-- [ ] Backend: signed URL generator for R2 videos
-- [ ] Frontend: React player with signed URL
-- [ ] Test: enrolled student can watch video, unenrolled cannot
+## Phase 4 — Video Streaming ✅
+- [x] Backend: signed URL generator for Azure Blob videos
+- [x] Frontend: Video player with signed URL
+- [x] Test: enrolled student can watch video, unenrolled cannot
 
-## Phase 5 — Progress Tracking
-- [ ] Backend: mark lecture complete endpoint → update `progress_pct`
-- [ ] Frontend: progress bar on course page
-- [ ] Test: complete all lectures → 100% progress
+## Phase 5 — Progress Tracking ✅
+- [x] Backend: mark lecture complete endpoint → update progress
+- [x] Frontend: progress bar on course page
+- [x] Test: complete all lectures → 100% progress
 
 ## Phase 6 — Quiz System
-- [ ] `quizzes` + `questions` tables
-- [ ] Backend: teacher creates quiz, student submits answers
-- [ ] Frontend: quiz create & attempt UI
+- [x] `quizzes` + `questions` tables
+- [x] Backend: teacher creates quiz, student submits answers
+- [x] Frontend: quiz create & attempt UI
 - [ ] Test: teacher creates quiz → student takes it → score returned
 
 ## Phase 7 — AI MCQ Generator
-- [ ] Backend: Gemini API integration → generate questions as JSON
-- [ ] Frontend: "Generate quiz with AI" button
+- [x] Backend: Gemini API integration → generate questions as JSON
+- [x] Frontend: "Generate quiz with AI" button
 - [ ] Test: teacher generates AI quiz → questions saved to DB
 
 ## Phase 8 — Doubt System

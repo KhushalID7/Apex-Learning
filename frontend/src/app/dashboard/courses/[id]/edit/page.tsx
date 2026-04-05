@@ -5,6 +5,10 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { getCourseById, updateCourse, deleteCourse, type Course } from "@/lib/courseApi";
+import Navbar from "@/components/Navbar";
+import LoadingScreen from "@/components/LoadingScreen";
+import AlertBanner from "@/components/AlertBanner";
+import { ChevronLeft, Edit2, PlayCircle, PenTool, Image as ImageIcon, FileText, Type, DollarSign, Loader2, Trash2 } from "lucide-react";
 
 export default function EditCoursePage() {
   const { user, profile, loading, session } = useAuth();
@@ -108,7 +112,7 @@ export default function EditCoursePage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this course? This action cannot be undone.")) {
+    if (!confirm("Are you sure you want to delete this course? This action cannot be undone and will remove all associated lectures and quizzes.")) {
       return;
     }
 
@@ -124,174 +128,227 @@ export default function EditCoursePage() {
   };
 
   if (loading || pageLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <svg className="h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <p className="text-sm text-muted">Loading…</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading course editor…" />;
   }
 
   if (!user || profile?.role !== "teacher" || !course) return null;
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-card-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/dashboard" className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            AWT Learning
-          </Link>
-          <Link
-            href="/dashboard/courses"
-            className="text-sm text-muted transition-colors hover:text-foreground"
-          >
-            ← Back
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background pb-20">
+      <Navbar />
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-2xl px-6 py-12">
-        <div className="rounded-2xl border border-card-border bg-card/80 p-8">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">Edit Course</h1>
-              <p className="text-muted">Update your course details</p>
-            </div>
-            
-            <Link
-              href={`/dashboard/courses/${courseId}/lectures`}
-              className="rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-medium transition-all hover:bg-primary/20 flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              Manage Lectures
-            </Link>
-          </div>
-
-          {error && (
-            <div className="mb-6 rounded-lg border border-danger/30 bg-danger/10 p-4">
-              <p className="text-sm text-danger">{error}</p>
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-6 rounded-lg border border-green-400/30 bg-green-400/10 p-4">
-              <p className="text-sm text-green-600">{success}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
-                Course Title *
-              </label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-card-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
-                Description
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={5}
-                className="w-full rounded-lg border border-card-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-              />
-            </div>
-
-            {/* Price */}
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium text-foreground mb-2">
-                Price (₹)
-              </label>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                className="w-full rounded-lg border border-card-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            {/* Thumbnail URL */}
-            <div>
-              <label htmlFor="thumbnail_url" className="block text-sm font-medium text-foreground mb-2">
-                Thumbnail URL
-              </label>
-              <input
-                type="url"
-                id="thumbnail_url"
-                name="thumbnail_url"
-                value={formData.thumbnail_url}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-card-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            {/* Published Status */}
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="is_published"
-                name="is_published"
-                checked={formData.is_published}
-                onChange={handleChange}
-                className="rounded border-card-border"
-              />
-              <label htmlFor="is_published" className="text-sm font-medium text-foreground">
-                Publish this course (make it visible to students)
-              </label>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex gap-3 pt-4">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50"
-              >
-                {submitting ? "Saving…" : "Save Changes"}
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 rounded-lg border border-danger/30 px-6 py-2 text-sm font-medium text-danger transition-all hover:bg-danger/5 disabled:opacity-50"
-              >
-                {deleting ? "Deleting…" : "Delete Course"}
-              </button>
-            </div>
-
+      <main className="mx-auto max-w-4xl px-6 py-12">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 animate-fade-in">
+          <div>
             <Link
               href="/dashboard/courses"
-              className="block rounded-lg border border-card-border px-6 py-2 text-sm font-medium text-muted transition-all hover:border-card-border/50 hover:bg-card/50 text-center"
+              className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-foreground transition-colors mb-4"
             >
-              Cancel
+              <ChevronLeft className="h-4 w-4" />
+              Back to Courses
             </Link>
-          </form>
+            <h1 className="text-3xl font-extrabold text-foreground flex items-center gap-3">
+              <Edit2 className="h-8 w-8 text-primary" />
+              Edit Course
+            </h1>
+            <p className="mt-2 text-muted">Manage your course details and settings.</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/dashboard/courses/${courseId}/lectures`}
+              className="btn-outline flex items-center gap-2"
+            >
+              <PlayCircle className="h-4 w-4" />
+              Manage Lectures
+            </Link>
+            <Link
+              href={`/dashboard/courses/${courseId}/quizzes`}
+              className="btn-outline flex items-center gap-2"
+            >
+              <PenTool className="h-4 w-4" />
+              Manage Quizzes
+            </Link>
+          </div>
+        </div>
+
+        {error && <AlertBanner message={error} variant="error" className="mb-6" />}
+        {success && <AlertBanner message={success} variant="success" className="mb-6" />}
+
+        {/* Form Container */}
+        <div className="rounded-3xl border border-card-border bg-card/40 shadow-2xl overflow-hidden animate-slide-up">
+          <div className="p-8 sm:p-10">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              
+              {/* Title */}
+              <div>
+                <label htmlFor="title" className="mb-2 block text-sm font-medium text-foreground">
+                  Course Title <span className="text-danger">*</span>
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <Type className="h-4 w-4 text-muted" />
+                  </div>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    placeholder="e.g. Advanced Frontend Development"
+                    className="input-field pl-11"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label htmlFor="description" className="mb-2 block text-sm font-medium text-foreground">
+                  Course Description
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute top-4 left-0 flex items-center pl-4">
+                    <FileText className="h-4 w-4 text-muted" />
+                  </div>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={6}
+                    placeholder="Provide a detailed outline of what students will learn..."
+                    className="input-field pl-11 py-3 resize-none custom-scrollbar"
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted">Supports basic markdown formatting.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Price */}
+                <div>
+                  <label htmlFor="price" className="mb-2 block text-sm font-medium text-foreground">
+                    Price (INR)
+                  </label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                      <DollarSign className="h-4 w-4 text-muted" />
+                    </div>
+                    <input
+                      type="number"
+                      id="price"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleChange}
+                      min="0"
+                      step="0.01"
+                      className="input-field pl-11 font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Published Status */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-foreground">
+                    Visibility Status
+                  </label>
+                  <label className={`relative flex cursor-pointer items-start gap-4 rounded-xl border p-4 transition-all hover:bg-surface-2 ${formData.is_published ? "border-success/50 bg-success/5" : "border-card-border bg-surface"}`}>
+                    <div className="flex items-center h-6">
+                      <input
+                        type="checkbox"
+                        id="is_published"
+                        name="is_published"
+                        checked={formData.is_published}
+                        onChange={handleChange}
+                        className="h-5 w-5 rounded border-card-border bg-background text-success focus:ring-success/50 cursor-pointer"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className={`text-sm font-semibold ${formData.is_published ? "text-success" : "text-foreground"}`}>
+                        {formData.is_published ? "Published" : "Draft Mode"}
+                      </span>
+                      <span className="text-xs text-muted mt-1">
+                        {formData.is_published 
+                          ? "Visible to all students in the catalog." 
+                          : "Only visible to you. Students cannot enroll."}
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Thumbnail URL */}
+              <div>
+                <label htmlFor="thumbnail_url" className="mb-2 block text-sm font-medium text-foreground">
+                  Cover Image URL
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <ImageIcon className="h-4 w-4 text-muted" />
+                  </div>
+                  <input
+                    type="url"
+                    id="thumbnail_url"
+                    name="thumbnail_url"
+                    value={formData.thumbnail_url}
+                    onChange={handleChange}
+                    placeholder="https://example.com/image.jpg"
+                    className="input-field pl-11"
+                  />
+                </div>
+                
+                {/* Image Preview */}
+                {formData.thumbnail_url && (
+                  <div className="mt-4 rounded-xl border border-card-border overflow-hidden bg-surface-2 relative group h-48 w-full sm:w-80">
+                    <img 
+                      src={formData.thumbnail_url} 
+                      alt="Thumbnail Preview" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                      }}
+                    />
+                    <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md rounded px-2 py-1 text-xs text-white">
+                      Preview
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-6 mt-6 border-t border-card-border">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="btn-primary flex-1 py-4 flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Course Details"
+                  )}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-danger/30 bg-danger/10 px-6 py-4 text-sm font-semibold text-danger transition-all hover:bg-danger/20 hover:border-danger/50 disabled:opacity-50 flex-none"
+                >
+                  {deleting ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-5 w-5" />
+                  )}
+                  <span className="hidden sm:inline">Delete Course</span>
+                </button>
+              </div>
+
+            </form>
+          </div>
         </div>
       </main>
     </div>

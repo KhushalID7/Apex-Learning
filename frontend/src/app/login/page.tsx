@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { Mail, Lock, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,98 +33,134 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      {/* Background glow effects */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-accent/10 blur-[120px]" />
+    <div className="flex min-h-screen bg-background">
+      {/* Left Panel - Animation/Visual */}
+      <div className="relative hidden w-1/2 flex-col items-center justify-center overflow-hidden border-r border-card-border bg-surface lg:flex">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-50" />
+        <div className="mesh-bg animate-pulse-glow" />
+        
+        <div className="relative z-10 flex max-w-md flex-col items-center text-center animate-slide-up">
+          <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-2xl shadow-primary/20">
+            <Sparkles className="h-10 w-10 text-white" />
+          </div>
+          <h2 className="mb-4 text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Welcome Back
+          </h2>
+          <p className="text-lg text-muted">
+            Continuing your educational journey with AWT Learning Platform.
+          </p>
+        </div>
       </div>
 
-      <div className="relative w-full max-w-md">
-        {/* Logo */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            AWT Learning
-          </h1>
-          <p className="mt-2 text-muted text-sm">Welcome back — sign in to continue</p>
-        </div>
-
-        {/* Card */}
-        <div className="rounded-2xl border border-card-border bg-card/80 backdrop-blur-xl p-8 shadow-2xl shadow-black/20">
-          <form onSubmit={handleLogin} className="space-y-5">
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-foreground/80">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full rounded-lg border border-card-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:border-primary"
-              />
+      {/* Right Panel - Form */}
+      <div className="flex w-full flex-col justify-center px-4 py-12 sm:px-6 lg:w-1/2 lg:px-20 xl:px-32 relative">
+        <div className="mx-auto w-full max-w-md animate-fade-in">
+          {/* Mobile Logo */}
+          <div className="mb-8 lg:hidden text-center flex flex-col items-center">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/20">
+              <Sparkles className="h-6 w-6 text-white" />
             </div>
-
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-foreground/80">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-lg border border-card-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:border-primary"
-              />
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div className="rounded-lg bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
-                {error}
-              </div>
-            )}
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-white transition-all hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Signing in…
-                </span>
-              ) : (
-                "Sign In"
-              )}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-card-border" />
-            <span className="text-xs text-muted">OR</span>
-            <div className="h-px flex-1 bg-card-border" />
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              AWT Learning
+            </h2>
           </div>
 
-          {/* Register link */}
-          <p className="text-center text-sm text-muted">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-medium text-primary hover:text-primary-hover">
-              Create one
-            </Link>
-          </p>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground">Sign In</h1>
+            <p className="mt-2 text-sm text-muted">Please enter your details to sign in.</p>
+          </div>
+
+          {/* Card */}
+          <div className="rounded-2xl border border-card-border bg-card/60 backdrop-blur-md p-8 shadow-xl shadow-black/20">
+            <form onSubmit={handleLogin} className="space-y-6">
+              {/* Email */}
+              <div>
+                <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">
+                  Email
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <Mail className="h-4 w-4 text-muted" />
+                  </div>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="input-field pl-11"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label htmlFor="password" className="mb-2 block text-sm font-medium text-foreground">
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <Lock className="h-4 w-4 text-muted" />
+                  </div>
+                  <input
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="input-field pl-11"
+                  />
+                </div>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="flex items-center gap-2 rounded-lg bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger animate-slide-up">
+                  <Lock className="h-4 w-4 shrink-0" />
+                  {error}
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Signing in…
+                  </>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="my-6 relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-card-border"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-card/60 px-2 text-muted backdrop-blur-md">OR</span>
+              </div>
+            </div>
+
+            {/* Register link */}
+            <p className="text-center text-sm text-muted">
+              Don&apos;t have an account?{" "}
+              <Link href="/register" className="font-semibold text-primary transition-colors hover:text-primary-hover">
+                Create one
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

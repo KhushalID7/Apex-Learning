@@ -4,6 +4,7 @@ from app.auth.router import router as auth_router
 from app.courses.router import router as courses_router
 from app.courses.stats_router import router as stats_router
 from app.lectures.router import router as lectures_router
+from app.quizzes.router import router as quizzes_router
 
 app = FastAPI(
     title="AWT Learning Platform",
@@ -26,6 +27,7 @@ app.include_router(auth_router)
 app.include_router(stats_router)
 app.include_router(courses_router)
 app.include_router(lectures_router)
+app.include_router(quizzes_router)
 
 # ---------- Health check ----------
 @app.get("/health")

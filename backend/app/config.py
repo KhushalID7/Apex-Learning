@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
 
-    # Gemini AI
-    GEMINI_API_KEY: str = ""
+    # Groq AI
+    GROQ_API_KEY: str = ""
 
     # Resend Email
     RESEND_API_KEY: str = ""

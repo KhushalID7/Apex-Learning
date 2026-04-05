@@ -260,3 +260,232 @@ export async function getTeacherStats(token: string): Promise<TeacherStats> {
 
   return response.json();
 }
+
+// ─────────────────── Quiz Types ───────────────────
+
+export interface Question {
+  id: string;
+  quiz_id: string;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: string;
+  created_by_ai: boolean;
+  created_at: string;
+}
+
+export interface Quiz {
+  id: string;
+  course_id: string;
+  title: string;
+  created_at: string;
+  question_count?: number;
+}
+
+export interface QuizDetail {
+  id: string;
+  course_id: string;
+  title: string;
+  created_at: string;
+  questions: Question[];
+}
+
+export interface QuizAttempt {
+  id: string;
+  quiz_id: string;
+  student_id: string;
+  score: number;
+  total: number;
+  answers: Record<string, string>;
+  submitted_at: string;
+}
+
+// ─────────────────── Quiz API ───────────────────
+
+export async function createQuiz(
+  courseId: string,
+  data: {
+    title: string;
+    questions: {
+      question: string;
+      option_a: string;
+      option_b: string;
+      option_c: string;
+      option_d: string;
+      correct_answer: string;
+    }[];
+  },
+  token: string
+): Promise<QuizDetail> {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to create quiz");
+  }
+
+  return response.json();
+}
+
+export async function getCourseQuizzes(courseId: string): Promise<Quiz[]> {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch quizzes");
+  }
+
+  return response.json();
+}
+
+export async function getQuizById(quizId: string): Promise<QuizDetail> {
+  const response = await fetch(`${API_BASE_URL}/quizzes/${quizId}`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Quiz not found");
+  }
+
+  return response.json();
+}
+
+export async function deleteQuiz(quizId: string, token: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/quizzes/${quizId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to delete quiz");
+  }
+}
+
+export async function updateQuiz(
+  quizId: string,
+  data: {
+    title: string;
+    questions: {
+      question: string;
+      option_a: string;
+      option_b: string;
+      option_c: string;
+      option_d: string;
+      correct_answer: string;
+    }[];
+  },
+  token: string
+): Promise<QuizDetail> {
+  const response = await fetch(`${API_BASE_URL}/quizzes/${quizId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to update quiz");
+  }
+
+  return response.json();
+}
+
+export async function submitQuiz(
+  quizId: string,
+  answers: Record<string, string>,
+  token: string
+): Promise<QuizAttempt> {
+  const response = await fetch(`${API_BASE_URL}/quizzes/${quizId}/submit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ answers }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to submit quiz");
+  }
+
+  return response.json();
+}
+
+export async function getQuizAttempts(quizId: string, token: string): Promise<QuizAttempt[]> {
+  const response = await fetch(`${API_BASE_URL}/quizzes/${quizId}/attempts`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch quiz attempts");
+  }
+
+  return response.json();
+}
+
+// ─────────────────── Teacher Quiz Results ───────────────────
+
+export interface QuizAttemptWithName extends QuizAttempt {
+  student_name: string;
+}
+
+export interface QuizResults {
+  quiz_title: string;
+  course_id: string;
+  attempts: QuizAttemptWithName[];
+}
+
+export async function getQuizResults(quizId: string, token: string): Promise<QuizResults> {
+  const response = await fetch(`${API_BASE_URL}/quizzes/${quizId}/results`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to fetch quiz results");
+  }
+
+  return response.json();
+}
+
+// ─────────────────── AI Quiz Generation ───────────────────
+
+export async function generateAIQuiz(
+  courseId: string,
+  data: { topic: string; num_questions?: number; difficulty?: string },
+  token: string
+): Promise<QuizDetail> {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes/generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to generate AI quiz");
+  }
+
+  return response.json();
+}

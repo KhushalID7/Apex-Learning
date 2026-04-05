@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { getCourseById, getCourseLectures, checkEnrollmentStatus, getCourseProgress, toggleLectureProgress, type Course, type Lecture } from "@/lib/courseApi";
+import { getCourseById, getCourseLectures, checkEnrollmentStatus, getCourseProgress, toggleLectureProgress, getCourseQuizzes, type Course, type Lecture, type Quiz } from "@/lib/courseApi";
+import LoadingScreen from "@/components/LoadingScreen";
+import { PlayCircle, CheckCircle2, ChevronLeft, Video, PenTool, LayoutList, ChevronRight } from "lucide-react";
 
 export default function CoursePlayerPage() {
   const params = useParams();
@@ -16,6 +18,7 @@ export default function CoursePlayerPage() {
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [activeLecture, setActiveLecture] = useState<Lecture | null>(null);
   const [completedLectureIds, setCompletedLectureIds] = useState<Set<string>>(new Set());
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,14 +47,16 @@ export default function CoursePlayerPage() {
       }
 
       // Fetch course and lectures concurrently
-      const [courseData, lecturesData, progressData] = await Promise.all([
+      const [courseData, lecturesData, progressData, quizzesData] = await Promise.all([
         getCourseById(courseId),
         getCourseLectures(courseId),
-        getCourseProgress(courseId, session!.access_token)
+        getCourseProgress(courseId, session!.access_token),
+        getCourseQuizzes(courseId),
       ]);
 
       setCourse(courseData);
       setCompletedLectureIds(new Set(progressData));
+      setQuizzes(quizzesData);
       
       // Sort lectures by order_index
       const sortedLectures = lecturesData.sort((a, b) => a.order_index - b.order_index);
@@ -83,35 +88,23 @@ export default function CoursePlayerPage() {
       await toggleLectureProgress(courseId, lectureId, newStatus, session!.access_token);
     } catch (err) {
       console.error("Failed to toggle progress", err);
-      // Revert optimism if needed (ignoring for brevity)
     }
   };
 
   if (loading || pageLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <svg className="h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <p className="text-sm text-muted">Preparing learning environment…</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Preparing your learning environment…" />;
   }
 
   if (error || !course) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
-        <div className="max-w-md text-center rounded-2xl border border-danger/30 bg-card p-8 shadow-xl">
-          <span className="text-4xl block mb-4">⛔</span>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
+        <div className="max-w-md text-center rounded-2xl border border-danger/30 bg-card p-8 shadow-2xl">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-danger/10 text-danger mb-4">
+            <CheckCircle2 className="h-8 w-8" />
+          </div>
           <h2 className="text-xl font-bold text-foreground mb-2">Access Denied</h2>
           <p className="text-muted text-sm mb-6">{error || "Course not found"}</p>
-          <Link
-            href={`/courses/${courseId}`}
-            className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white transition-all hover:bg-primary/90 block w-full"
-          >
+          <Link href={`/courses/${courseId}`} className="btn-primary block w-full">
             Go Back to Course Page
           </Link>
         </div>
@@ -119,35 +112,41 @@ export default function CoursePlayerPage() {
     );
   }
 
+  const progressPercentage = lectures.length > 0 ? (completedLectureIds.size / lectures.length) * 100 : 0;
+
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
       {/* Header */}
-      <header className="border-b border-card-border bg-card/80 backdrop-blur-md shrink-0">
-        <div className="flex items-center justify-between px-6 py-4">
+      <header className="border-b border-card-border bg-card/60 backdrop-blur-xl shrink-0 z-20">
+        <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-4">
             <Link
               href="/dashboard/learning"
-              className="rounded-full p-2 hover:bg-white/5 transition-colors text-muted hover:text-foreground"
+              className="flex items-center justify-center h-8 w-8 rounded-full hover:bg-white/10 transition-colors text-muted hover:text-foreground"
               title="Back to My Learning"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
+              <ChevronLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-lg font-bold text-foreground line-clamp-1 border-l border-card-border pl-4">
+            <div className="h-6 w-px bg-card-border" />
+            <h1 className="text-sm font-semibold text-foreground line-clamp-1">
               {course.title}
             </h1>
           </div>
-          <div className="flex items-center gap-3 w-48">
-            <div className="flex-1 bg-card-border rounded-full h-2.5 overflow-hidden">
+          
+          {/* Progress Bar Header */}
+          <div className="hidden sm:flex items-center gap-4 w-64">
+            <div className="flex-1 bg-surface-2 rounded-full h-2 overflow-hidden border border-white/5">
               <div 
-                className="bg-green-500 h-full transition-all duration-500" 
-                style={{ width: `${lectures.length > 0 ? (completedLectureIds.size / lectures.length) * 100 : 0}%` }}
+                className="bg-gradient-to-r from-success to-emerald-400 h-full transition-all duration-700 ease-out" 
+                style={{ width: `${progressPercentage}%` }}
               />
             </div>
-            <span className="text-sm font-medium text-muted whitespace-nowrap">
-              {completedLectureIds.size} / {lectures.length}
-            </span>
+            <div className="flex items-center gap-1.5 min-w-[50px] justify-end">
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              <span className="text-xs font-bold text-foreground">
+                {Math.round(progressPercentage)}%
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -155,16 +154,16 @@ export default function CoursePlayerPage() {
       {/* Workspace */}
       <div className="flex flex-1 overflow-hidden relative lg:flex-row flex-col">
         {/* Main Video Area */}
-        <div className="flex-1 flex flex-col bg-black/40 overflow-y-auto w-full">
+        <div className="flex-1 flex flex-col bg-surface overflow-y-auto custom-scrollbar w-full">
           {activeLecture ? (
-            <>
+            <div className="animate-fade-in">
               {/* Video Player Container */}
-              <div className="w-full bg-black relative flex items-center justify-center border-b border-card-border" style={{ maxHeight: '70vh' }}>
+              <div className="w-full bg-black relative flex items-center justify-center border-b border-card-border shadow-2xl">
                 {activeLecture.video_url ? (
                   <video
                     key={activeLecture.id} // Re-mounts video when activeLecture changes
                     controls
-                    className="w-full h-full max-h-[70vh] object-contain outline-none"
+                    className="w-full h-full max-h-[75vh] object-contain outline-none"
                     controlsList="nodownload"
                     poster={course.thumbnail_url || undefined}
                     onEnded={() => {
@@ -178,45 +177,66 @@ export default function CoursePlayerPage() {
                     Your browser does not support the video tag.
                   </video>
                 ) : (
-                  <div className="text-center p-8">
-                    <p className="text-muted">No video available for this lecture</p>
+                  <div className="flex flex-col items-center justify-center p-12 h-[50vh] bg-surface-2 w-full">
+                    <div className="h-16 w-16 rounded-full bg-card-border flex items-center justify-center mb-4 text-muted">
+                      <Video className="h-8 w-8" />
+                    </div>
+                    <p className="text-muted font-medium">No video content for this lecture</p>
                   </div>
                 )}
               </div>
 
               {/* Lecture Details */}
-              <div className="max-w-5xl mx-auto w-full p-6 lg:p-10 pb-20">
-                <h2 className="text-2xl font-bold text-foreground mb-4">
-                  {activeLecture.order_index}. {activeLecture.title}
-                </h2>
-                {activeLecture.description ? (
-                  <div className="prose prose-invert max-w-none text-muted">
-                    <p className="whitespace-pre-wrap">{activeLecture.description}</p>
-                  </div>
-                ) : (
-                  <p className="text-muted italic">No description provided.</p>
-                )}
+              <div className="max-w-5xl mx-auto w-full p-6 lg:p-12 pb-24">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary text-sm font-bold">
+                    {activeLecture.order_index}
+                  </span>
+                  <h2 className="text-2xl font-bold text-foreground">
+                    {activeLecture.title}
+                  </h2>
+                </div>
+                
+                <div className="mt-8">
+                  <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4 border-b border-card-border pb-2">Description</h3>
+                  {activeLecture.description ? (
+                    <div className="prose prose-invert max-w-none text-foreground/80 leading-relaxed font-medium">
+                      <p className="whitespace-pre-wrap">{activeLecture.description}</p>
+                    </div>
+                  ) : (
+                    <p className="text-muted italic">No further reading provided for this lecture.</p>
+                  )}
+                </div>
               </div>
-            </>
+            </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center h-full">
-              <span className="text-6xl mb-4">📭</span>
-              <h2 className="text-xl font-bold text-foreground mb-2">No Content Yet</h2>
-              <p className="text-muted text-sm max-w-md">
-                The instructor hasn't uploaded any lectures for this course yet. Check back later!
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center h-full animate-fade-in">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-card-border text-muted mb-6 shadow-xl">
+                <LayoutList className="h-10 w-10" />
+              </div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">No Content Yet</h2>
+              <p className="text-muted text-base max-w-md">
+                The instructor is still preparing the lectures for this course. Please check back later.
               </p>
             </div>
           )}
         </div>
 
         {/* Sidebar Curriculum */}
-        <aside className="lg:w-96 w-full border-l border-card-border bg-card/30 flex flex-col shrink-0 lg:h-full h-96 overflow-hidden">
-          <div className="p-5 border-b border-card-border bg-card/50">
-            <h3 className="font-bold text-foreground">Course Content</h3>
-            <p className="text-xs text-muted mt-1">{lectures.length} lectures</p>
+        <aside className="lg:w-96 w-full border-l border-card-border bg-card/40 flex flex-col shrink-0 lg:h-full h-[50vh] overflow-hidden">
+          <div className="p-5 border-b border-card-border bg-card/60 backdrop-blur-md z-10">
+            <h3 className="font-bold text-foreground flex items-center gap-2">
+              <LayoutList className="h-4 w-4 text-primary" />
+              Course Curriculum
+            </h3>
+            <div className="mt-3 flex items-center gap-2 text-xs text-muted font-medium">
+              <span>{lectures.length} Lectures</span>
+              <span className="h-1 w-1 rounded-full bg-muted/50" />
+              <span>{quizzes.length} Quizzes</span>
+            </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto py-3 custom-scrollbar">
             {lectures.length > 0 ? (
               <ul className="space-y-1 px-3">
                 {lectures.map((lecture) => {
@@ -224,54 +244,82 @@ export default function CoursePlayerPage() {
                   const isCompleted = completedLectureIds.has(lecture.id);
                   return (
                     <li key={lecture.id}>
-                      <div
+                      <button
                         onClick={() => setActiveLecture(lecture)}
-                        className={`w-full text-left p-4 rounded-lg flex items-start gap-4 transition-all cursor-pointer ${
+                        className={`w-full text-left p-3 rounded-xl flex items-start gap-3 transition-all ${
                           isActive 
-                            ? "bg-primary/10 border border-primary/20 text-primary" 
-                            : "hover:bg-white/5 border border-transparent text-foreground"
+                            ? "bg-primary/10 border border-primary/20 shadow-sm" 
+                            : "hover:bg-white/5 border border-transparent"
                         }`}
                       >
-                        <button
+                        <div
                           onClick={(e) => handleToggleProgress(lecture.id, isCompleted, e)}
-                          className={`mt-0.5 w-5 h-5 flex-shrink-0 flex items-center justify-center rounded-full border transition-colors hover:border-foreground ${
+                          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all ${
                             isCompleted 
-                              ? 'bg-green-500 border-green-500 text-black' 
-                              : isActive ? 'border-primary text-primary' : 'border-muted text-muted'
+                              ? 'bg-success border-success text-black' 
+                              : isActive 
+                                ? 'border-primary text-primary bg-primary/10' 
+                                : 'border-card-border text-muted bg-surface hover:border-muted/50'
                           }`}
                         >
                           {isCompleted ? (
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
+                            <CheckCircle2 className="h-3 w-3" />
                           ) : isActive ? (
-                            <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                            <PlayCircle className="h-3 w-3 fill-current" />
                           ) : (
-                            <span className="text-[10px]">{lecture.order_index}</span>
+                            <span className="text-[9px] font-bold">{lecture.order_index}</span>
                           )}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium line-clamp-2 ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                        </div>
+                        <div className="flex-1 min-w-0 pr-2">
+                          <p className={`text-sm font-medium line-clamp-2 ${isActive ? 'text-primary' : 'text-foreground/90'}`}>
                             {lecture.title}
                           </p>
                           {lecture.video_url && (
                             <p className="flex items-center gap-1.5 text-xs text-muted mt-1.5">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10" />
-                                <polygon points="10 8 16 12 10 16 10 8" />
-                              </svg>
+                              <Video className="h-3 w-3" />
                               Video
                             </p>
                           )}
                         </div>
-                      </div>
+                      </button>
                     </li>
                   );
                 })}
               </ul>
             ) : (
-              <div className="p-8 text-center">
+              <div className="p-8 text-center bg-card/30 m-3 rounded-xl border border-dashed border-card-border">
                 <p className="text-sm text-muted">Curriculum is empty.</p>
+              </div>
+            )}
+
+            {/* Quizzes Section */}
+            {quizzes.length > 0 && (
+              <div className="mt-6">
+                <div className="sticky top-0 bg-card/40 backdrop-blur-md px-5 py-3 border-y border-card-border mb-3">
+                  <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+                    <PenTool className="h-4 w-4 text-accent" />
+                    Assessments
+                  </h3>
+                </div>
+                <ul className="space-y-2 px-3 pb-6">
+                  {quizzes.map((quiz) => (
+                    <li key={quiz.id}>
+                      <Link
+                        href={`/courses/${courseId}/quiz/${quiz.id}`}
+                        className="group flex w-full items-center gap-4 rounded-xl border border-card-border bg-surface p-3 transition-all hover:bg-accent/5 hover:border-accent/30 hover:shadow-md"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent transition-colors group-hover:bg-accent group-hover:text-white">
+                          <PenTool className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-foreground group-hover:text-accent transition-colors line-clamp-1">{quiz.title}</p>
+                          <p className="text-xs text-muted mt-0.5">{quiz.question_count || 0} Questions</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>

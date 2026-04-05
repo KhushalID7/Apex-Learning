@@ -5,6 +5,12 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { getCourseById, getCourseLectures, uploadLecture, deleteLecture, type Course, type Lecture } from "@/lib/courseApi";
+import Navbar from "@/components/Navbar";
+import LoadingScreen from "@/components/LoadingScreen";
+import EmptyState from "@/components/EmptyState";
+import AlertBanner from "@/components/AlertBanner";
+import Badge from "@/components/Badge";
+import { ChevronLeft, PlayCircle, Video, Trash2, UploadCloud, FileText, Type, Loader2, Play, CheckCircle2 } from "lucide-react";
 
 export default function CourseLecturesPage() {
   const { user, profile, loading, session } = useAuth();
@@ -20,6 +26,7 @@ export default function CourseLecturesPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -53,7 +60,9 @@ export default function CourseLecturesPage() {
       setCourse(courseData);
 
       const lecturesData = await getCourseLectures(courseId);
-      setLectures(lecturesData);
+      // Sort by order index
+      const sortedLectures = lecturesData.sort((a, b) => a.order_index - b.order_index);
+      setLectures(sortedLectures);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
@@ -90,17 +99,20 @@ export default function CourseLecturesPage() {
       const data = new FormData();
       data.append("title", formData.title);
       data.append("description", formData.description);
-      data.append("order_index", lectures.length.toString());
+      data.append("order_index", (lectures.length + 1).toString()); // Start at 1 visually, assuming logic handles
       data.append("video", videoFile);
 
       const newLecture = await uploadLecture(courseId, data, session!.access_token);
       setLectures((prev) => [...prev, newLecture]);
-      setSuccess("Lecture uploaded successfully!");
+      setSuccess(`Lecture "${newLecture.title}" uploaded successfully!`);
       setFormData({ title: "", description: "" });
       setVideoFile(null);
       // reset file input
       const fileInput = document.getElementById('video') as HTMLInputElement;
       if (fileInput) fileInput.value = "";
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload lecture");
     } finally {
@@ -109,190 +121,250 @@ export default function CourseLecturesPage() {
   };
 
   const handleDelete = async (lectureId: string) => {
-    if (!confirm("Are you sure you want to delete this lecture?")) return;
+    if (!confirm("Are you sure you want to delete this lecture? This action cannot be undone.")) return;
 
     try {
+      setDeletingId(lectureId);
       await deleteLecture(lectureId, session!.access_token);
       setLectures((prev) => prev.filter((l) => l.id !== lectureId));
       setSuccess("Lecture deleted successfully!");
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete lecture");
+    } finally {
+      setDeletingId(null);
     }
   };
 
   if (loading || pageLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <svg className="h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <p className="text-sm text-muted">Loading…</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading course lectures…" />;
   }
 
   if (!user || profile?.role !== "teacher" || !course) return null;
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-card-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/dashboard" className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            AWT Learning
-          </Link>
-          <Link
-            href={`/dashboard/courses/${courseId}/edit`}
-            className="text-sm text-muted transition-colors hover:text-foreground"
-          >
-            ← Back to Course Edit
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background pb-24">
+      <Navbar />
 
-      <main className="mx-auto max-w-6xl px-6 py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: List of Lectures */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-foreground">Manage Lectures</h1>
-            <span className="text-sm px-3 py-1 bg-primary/10 text-primary rounded-full">
-              {course.title}
-            </span>
+      <main className="mx-auto max-w-7xl px-6 py-12">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 animate-fade-in">
+          <div>
+            <Link
+              href={`/dashboard/courses/${courseId}/edit`}
+              className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-foreground transition-colors mb-4"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to Course Edit
+            </Link>
+            <h1 className="text-3xl font-extrabold text-foreground flex items-center gap-3">
+              <PlayCircle className="h-8 w-8 text-primary" />
+              Manage Lectures
+            </h1>
+            <div className="mt-3 flex items-center gap-3">
+              <span className="text-muted text-sm">Course:</span>
+              <Badge variant="primary">{course.title}</Badge>
+            </div>
           </div>
+        </div>
 
-          {error && (
-            <div className="mb-6 rounded-lg border border-danger/30 bg-danger/10 p-4">
-              <p className="text-sm text-danger">{error}</p>
-            </div>
-          )}
-          {success && (
-            <div className="mb-6 rounded-lg border border-green-400/30 bg-green-400/10 p-4">
-              <p className="text-sm text-green-600">{success}</p>
-            </div>
-          )}
+        {error && <AlertBanner message={error} variant="error" className="mb-6 animate-slide-up" />}
+        {success && <AlertBanner message={success} variant="success" className="mb-6 animate-slide-up" />}
 
-          <div className="space-y-4">
-            {lectures.length === 0 ? (
-              <div className="rounded-xl border border-card-border border-dashed p-12 text-center text-muted">
-                No lectures uploaded yet.
-              </div>
-            ) : (
-              lectures.map((lecture, index) => (
-                <div key={lecture.id} className="rounded-xl border border-card-border bg-card/80 p-5 flex items-start gap-4 transition-all hover:bg-card">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground truncate">{lecture.title}</h3>
-                    {lecture.description && (
-                      <p className="text-sm text-muted mt-1 line-clamp-2">{lecture.description}</p>
-                    )}
-                    {lecture.video_url && (
-                      <a 
-                        href={lecture.video_url} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="text-xs text-primary hover:underline mt-2 inline-block"
-                      >
-                        View Video
-                      </a>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleDelete(lecture.id)}
-                    className="p-2 text-muted hover:text-danger rounded-lg hover:bg-danger/10 transition-colors"
-                    title="Delete Lecture"
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+          {/* Left Column: List of Lectures */}
+          <div className="lg:col-span-7 xl:col-span-8 animate-slide-up">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-card-border">
+              <h2 className="text-xl font-bold text-foreground">Curriculum Outline</h2>
+              <span className="bg-surface-2 text-muted px-3 py-1 rounded-full text-sm font-semibold border border-card-border">
+                {lectures.length} Lectures
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {lectures.length === 0 ? (
+                <EmptyState
+                  icon={<Video className="h-10 w-10 text-muted" />}
+                  title="No lectures uploaded yet"
+                  description="Start building your course curriculum by uploading video lectures using the form."
+                />
+              ) : (
+                lectures.map((lecture, index) => (
+                  <div 
+                    key={lecture.id} 
+                    className="group rounded-2xl border border-card-border bg-card/40 p-5 flex flex-col sm:flex-row items-start gap-4 transition-all hover:bg-card/60 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Right Column: Upload Form */}
-        <div>
-          <div className="rounded-2xl border border-card-border bg-card/80 p-6 sticky top-24">
-            <h2 className="text-lg font-bold text-foreground mb-4">Upload New Lecture</h2>
-            
-            <form onSubmit={handleUpload} className="space-y-4">
-              <div>
-                <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
-                  Lecture Title *
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-card-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-sm"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full rounded-lg border border-card-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none text-sm"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="video" className="block text-sm font-medium text-foreground mb-2">
-                  Video File *
-                </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-card-border border-dashed rounded-lg bg-background hover:bg-card-border/10 transition-colors">
-                  <div className="space-y-1 text-center">
-                    <svg className="mx-auto h-12 w-12 text-muted" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <div className="flex text-sm text-muted justify-center">
-                      <label htmlFor="video" className="relative cursor-pointer bg-background rounded-md font-medium text-primary hover:text-primary/80 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary">
-                        <span>Upload a video</span>
-                        <input id="video" name="video" type="file" accept="video/*" className="sr-only" onChange={handleFileChange} required />
-                      </label>
+                    {/* Index Badge */}
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-black shadow-inner shadow-white/10 group-hover:scale-110 transition-transform">
+                      {index + 1}
                     </div>
-                    {videoFile && (
-                      <p className="text-xs text-foreground font-medium mt-2 max-w-full truncate px-2">
-                        {videoFile.name}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted">MP4, WebM up to 500MB</p>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 w-full sm:pt-1">
+                      <h3 className="text-lg font-bold text-foreground truncate group-hover:text-primary transition-colors">{lecture.title}</h3>
+                      
+                      {lecture.description ? (
+                        <p className="text-sm text-muted mt-1.5 line-clamp-2">{lecture.description}</p>
+                      ) : (
+                        <p className="text-sm text-muted/50 italic mt-1.5">No description provided.</p>
+                      )}
+                      
+                      {/* Actions row */}
+                      <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-card-border sm:border-t-0 sm:pt-0 sm:mt-3">
+                        {lecture.video_url && (
+                          <a 
+                            href={lecture.video_url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg transition-all"
+                          >
+                            <Play className="h-3 w-3 fill-current" />
+                            Preview Video
+                          </a>
+                        )}
+                        <span className="text-xs text-muted flex items-center gap-1">
+                          <Video className="h-3.5 w-3.5" />
+                          MP4 Video
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Delete Toggle */}
+                    <button
+                      onClick={() => handleDelete(lecture.id)}
+                      disabled={deletingId === lecture.id}
+                      className="absolute top-5 right-5 sm:relative sm:top-0 sm:right-0 p-2 text-muted hover:text-danger hover:bg-danger/10 rounded-xl transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 disabled:opacity-50"
+                      title="Delete Lecture"
+                    >
+                      {deletingId === lecture.id ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Upload Form */}
+          <div className="lg:col-span-5 xl:col-span-4 animate-slide-up delay-100">
+            <div className="rounded-3xl border border-card-border bg-card/60 p-6 sm:p-8 shadow-2xl sticky top-24 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-[40px] pointer-events-none" />
+              
+              <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2 relative z-10">
+                <UploadCloud className="h-6 w-6 text-primary" />
+                Upload New Lecture
+              </h2>
+              
+              <form onSubmit={handleUpload} className="space-y-6 relative z-10">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
+                    Lecture Title <span className="text-danger">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                      <Type className="h-4 w-4 text-muted" />
+                    </div>
+                    <input
+                      type="text"
+                      id="title"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      placeholder="e.g. Introduction to Variables"
+                      className="input-field pl-10"
+                      required
+                    />
                   </div>
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                disabled={uploading}
-                className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50 mt-4"
-              >
-                {uploading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Uploading...
-                  </span>
-                ) : (
-                  "Upload Lecture"
-                )}
-              </button>
-            </form>
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
+                    Description
+                  </label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute top-3 left-0 flex items-center pl-3">
+                      <FileText className="h-4 w-4 text-muted" />
+                    </div>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      placeholder="What is this lecture about?"
+                      rows={4}
+                      className="input-field pl-10 resize-none custom-scrollbar py-3"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="video" className="block text-sm font-medium text-foreground mb-2">
+                    Video File <span className="text-danger">*</span>
+                  </label>
+                  
+                  <div className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-6 transition-colors ${
+                    videoFile ? 'border-primary/50 bg-primary/5' : 'border-card-border bg-surface hover:bg-surface-2 hover:border-primary/30'
+                  }`}>
+                    <input 
+                      id="video" 
+                      name="video" 
+                      type="file" 
+                      accept="video/*" 
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                      onChange={handleFileChange} 
+                      required 
+                    />
+                    
+                    {videoFile ? (
+                      <div className="text-center w-full">
+                        <div className="mx-auto h-12 w-12 rounded-full bg-primary flex items-center justify-center mb-3 shadow-[0_0_15px_rgba(var(--primary),0.5)]">
+                          <CheckCircle2 className="h-6 w-6 text-black" />
+                        </div>
+                        <p className="text-sm font-bold text-foreground truncate px-4">{videoFile.name}</p>
+                        <p className="text-xs text-muted mt-1">{(videoFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                        <p className="text-xs text-primary mt-3 hover:underline">Click here to change file</p>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <div className="mx-auto h-14 w-14 rounded-full bg-surface-2 border border-card-border flex items-center justify-center mb-3">
+                          <UploadCloud className="h-6 w-6 text-muted" />
+                        </div>
+                        <p className="text-sm font-bold text-foreground">Click to upload video</p>
+                        <p className="text-xs text-muted mt-1">MP4, WebM up to 500MB</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={uploading}
+                    className="btn-primary w-full py-4 flex items-center justify-center gap-2 text-base"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Uploading to Cloudflare R2...
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="h-5 w-5" />
+                        Upload Lecture
+                      </>
+                    )}
+                  </button>
+                  {uploading && (
+                    <p className="text-[10px] text-muted text-center mt-3 animate-pulse">
+                      Please do not close this window while the upload is in progress.
+                    </p>
+                  )}
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </main>

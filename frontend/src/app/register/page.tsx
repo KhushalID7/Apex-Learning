@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { Mail, Lock, User, Sparkles, BookOpen, GraduationCap, ArrowRight, Loader2 } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -57,150 +58,201 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      {/* Background glow effects */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-accent/10 blur-[120px]" />
-        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-primary/10 blur-[120px]" />
+    <div className="flex min-h-screen bg-background">
+      {/* Left Panel - Animation/Visual */}
+      <div className="relative hidden w-1/2 flex-col items-center justify-center overflow-hidden border-r border-card-border bg-surface lg:flex">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-50" />
+        <div className="mesh-bg animate-pulse-glow delay-500" />
+        
+        <div className="relative z-10 flex max-w-md flex-col items-center text-center animate-slide-up">
+          <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-2xl shadow-primary/20">
+            <Sparkles className="h-10 w-10 text-white" />
+          </div>
+          <h2 className="mb-4 text-4xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+            Join the Community
+          </h2>
+          <p className="text-lg text-muted">
+            Create an account to track progress, earn certificates, and master new skills.
+          </p>
+        </div>
       </div>
 
-      <div className="relative w-full max-w-md">
-        {/* Logo */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-            Join AWT Learning
-          </h1>
-          <p className="mt-2 text-muted text-sm">Create your account and start learning</p>
-        </div>
-
-        {/* Card */}
-        <div className="rounded-2xl border border-card-border bg-card/80 backdrop-blur-xl p-8 shadow-2xl shadow-black/20">
-          <form onSubmit={handleRegister} className="space-y-5">
-            {/* Full Name */}
-            <div>
-              <label htmlFor="fullName" className="mb-1.5 block text-sm font-medium text-foreground/80">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="John Doe"
-                className="w-full rounded-lg border border-card-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:border-primary"
-              />
+      {/* Right Panel - Form */}
+      <div className="flex w-full flex-col justify-center px-4 py-12 sm:px-6 lg:w-1/2 lg:px-20 xl:px-32 relative">
+        <div className="mx-auto w-full max-w-md animate-fade-in">
+          {/* Mobile Logo */}
+          <div className="mb-8 lg:hidden text-center flex flex-col items-center">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/20">
+              <Sparkles className="h-6 w-6 text-white" />
             </div>
-
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-foreground/80">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full rounded-lg border border-card-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:border-primary"
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-foreground/80">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimum 6 characters"
-                className="w-full rounded-lg border border-card-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:border-primary"
-              />
-            </div>
-
-            {/* Role selector */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground/80">
-                I want to
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRole("student")}
-                  className={`rounded-lg border px-4 py-3 text-sm font-medium transition-all ${
-                    role === "student"
-                      ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
-                      : "border-card-border bg-background text-muted hover:border-primary/30 hover:text-foreground"
-                  }`}
-                >
-                  📚 Learn
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole("teacher")}
-                  className={`rounded-lg border px-4 py-3 text-sm font-medium transition-all ${
-                    role === "teacher"
-                      ? "border-accent bg-accent/10 text-accent shadow-sm shadow-accent/10"
-                      : "border-card-border bg-background text-muted hover:border-accent/30 hover:text-foreground"
-                  }`}
-                >
-                  🎓 Teach
-                </button>
-              </div>
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div className="rounded-lg bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
-                {error}
-              </div>
-            )}
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full rounded-lg py-3 text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                role === "teacher"
-                  ? "bg-accent hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/25"
-                  : "bg-primary hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/25"
-              }`}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Creating account…
-                </span>
-              ) : (
-                `Create ${role === "teacher" ? "Teacher" : "Student"} Account`
-              )}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-card-border" />
-            <span className="text-xs text-muted">OR</span>
-            <div className="h-px flex-1 bg-card-border" />
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+              AWT Learning
+            </h2>
           </div>
 
-          {/* Login link */}
-          <p className="text-center text-sm text-muted">
-            Already have an account?{" "}
-            <Link href="/login" className="font-medium text-primary hover:text-primary-hover">
-              Sign in
-            </Link>
-          </p>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground">Create Account</h1>
+            <p className="mt-2 text-sm text-muted">Get started by filling out your information below.</p>
+          </div>
+
+          {/* Card */}
+          <div className="rounded-2xl border border-card-border bg-card/60 backdrop-blur-md p-8 shadow-xl shadow-black/20">
+            <form onSubmit={handleRegister} className="space-y-6">
+              
+              {/* Role selector */}
+              <div>
+                <label className="mb-3 block text-sm font-medium text-foreground">
+                  I want to...
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setRole("student")}
+                    className={`relative flex flex-col items-center gap-2 rounded-xl border p-4 transition-all ${
+                      role === "student"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-card-border bg-surface text-muted hover:border-primary/30 hover:bg-surface-2"
+                    }`}
+                  >
+                    <BookOpen className={`h-6 w-6 ${role === "student" ? "text-primary" : "text-muted"}`} />
+                    <span className="text-sm font-semibold text-foreground">Learn</span>
+                    {role === "student" && (
+                      <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">✓</span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole("teacher")}
+                    className={`relative flex flex-col items-center gap-2 rounded-xl border p-4 transition-all ${
+                      role === "teacher"
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-card-border bg-surface text-muted hover:border-accent/30 hover:bg-surface-2"
+                    }`}
+                  >
+                    <GraduationCap className={`h-6 w-6 ${role === "teacher" ? "text-accent" : "text-muted"}`} />
+                    <span className="text-sm font-semibold text-foreground">Teach</span>
+                    {role === "teacher" && (
+                      <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] text-white">✓</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Full Name */}
+              <div>
+                <label htmlFor="fullName" className="mb-2 block text-sm font-medium text-foreground">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <User className="h-4 w-4 text-muted" />
+                  </div>
+                  <input
+                    id="fullName"
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="John Doe"
+                    className="input-field pl-11"
+                  />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div>
+                <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">
+                  Email
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <Mail className="h-4 w-4 text-muted" />
+                  </div>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="input-field pl-11"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label htmlFor="password" className="mb-2 block text-sm font-medium text-foreground">
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <Lock className="h-4 w-4 text-muted" />
+                  </div>
+                  <input
+                    id="password"
+                    type="password"
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Minimum 6 characters"
+                    className="input-field pl-11"
+                  />
+                </div>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="flex items-center gap-2 rounded-lg bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger animate-slide-up">
+                  <Lock className="h-4 w-4 shrink-0" />
+                  {error}
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  background: role === "teacher" 
+                    ? "linear-gradient(135deg, var(--accent), #00a4cc)" 
+                    : "linear-gradient(135deg, var(--primary), #6244e0)"
+                }}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Creating account…
+                  </>
+                ) : (
+                  <>
+                    Create {role === "teacher" ? "Instructor" : "Student"} Account
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="my-6 relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-card-border"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-card/60 px-2 text-muted backdrop-blur-md">OR</span>
+              </div>
+            </div>
+
+            {/* Login link */}
+            <p className="text-center text-sm text-muted">
+              Already have an account?{" "}
+              <Link href="/login" className="font-semibold text-primary transition-colors hover:text-primary-hover">
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

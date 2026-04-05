@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { getTeacherCourses, deleteCourse, type Course } from "@/lib/courseApi";
+import Navbar from "@/components/Navbar";
+import LoadingScreen from "@/components/LoadingScreen";
+import EmptyState from "@/components/EmptyState";
+import AlertBanner from "@/components/AlertBanner";
+import Badge from "@/components/Badge";
+import { BookCopy, Plus, Edit2, Trash2, Library, GraduationCap, Video } from "lucide-react";
 
 export default function TeacherCoursesPage() {
   const { user, profile, loading, session } = useAuth();
@@ -40,7 +46,7 @@ export default function TeacherCoursesPage() {
   };
 
   const handleDelete = async (courseId: string) => {
-    if (!confirm("Are you sure you want to delete this course?")) return;
+    if (!confirm("Are you sure you want to delete this course? This action cannot be undone.")) return;
 
     try {
       setDeletingId(courseId);
@@ -54,134 +60,113 @@ export default function TeacherCoursesPage() {
   };
 
   if (loading || courseLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <svg className="h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <p className="text-sm text-muted">Loading…</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading your courses…" />;
   }
 
   if (!user || profile?.role !== "teacher") return null;
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-card-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/dashboard" className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            AWT Learning
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="text-sm text-muted transition-colors hover:text-foreground"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/courses"
-              className="text-sm text-muted transition-colors hover:text-foreground"
-            >
-              Browse Courses
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background pb-20">
+      <Navbar />
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-7xl px-6 py-12">
         {/* Page Header */}
-        <div className="flex items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10 animate-fade-in">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">My Courses</h1>
-            <p className="mt-1 text-muted">Create and manage your courses</p>
+            <h1 className="text-3xl font-extrabold text-foreground flex items-center gap-3">
+              <Library className="h-8 w-8 text-primary" />
+              My Courses
+            </h1>
+            <p className="mt-2 text-muted">Create, manage, and publish your educational content.</p>
           </div>
           <Link
             href="/dashboard/courses/new"
-            className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white transition-all hover:bg-primary/90 active:scale-95"
+            className="btn-primary flex items-center gap-2"
           >
-            + Create Course
+            <Plus className="h-4 w-4" />
+            Create Course
           </Link>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 rounded-lg border border-danger/30 bg-danger/10 p-4">
-            <p className="text-sm text-danger">{error}</p>
-          </div>
-        )}
+        {/* Global Error Banner */}
+        {error && <AlertBanner message={error} variant="error" className="mb-8" />}
 
         {/* Courses Grid */}
-        {courses.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-card-border p-12 text-center">
-            <p className="text-lg font-medium text-foreground mb-2">No courses yet</p>
-            <p className="text-muted">Create your first course to get started!</p>
-          </div>
+        {courses.length === 0 && !error ? (
+          <EmptyState
+            icon={<BookCopy className="h-10 w-10 text-primary" />}
+            title="No courses created yet"
+            description="Start sharing your knowledge with the world by creating your first course."
+            actionLabel="Create Your First Course"
+            actionHref="/dashboard/courses/new"
+          />
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((course) => (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {courses.map((course, idx) => (
               <div
                 key={course.id}
-                className="rounded-xl border border-card-border bg-card/60 overflow-hidden transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
+                className={`group flex flex-col rounded-2xl border border-card-border bg-card/40 overflow-hidden transition-all hover:bg-card/60 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30 hover:-translate-y-1 animate-slide-up delay-${(idx % 4 + 1) * 100}`}
               >
-                {/* Thumbnail */}
-                {course.thumbnail_url && (
-                  <div className="h-40 bg-gradient-to-br from-primary/20 to-accent/20 overflow-hidden">
+                {/* Thumbnail Header */}
+                <div className="relative h-48 bg-gradient-to-br from-surface to-surface-2 overflow-hidden shrink-0">
+                  {course.thumbnail_url ? (
                     <img
                       src={course.thumbnail_url}
                       alt={course.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                  </div>
-                )}
-
-                {/* Content */}
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <h3 className="font-semibold text-foreground line-clamp-2">
-                      {course.title}
-                    </h3>
-                    <span
-                      className={`whitespace-nowrap text-xs font-medium px-2 py-1 rounded ${
-                        course.is_published
-                          ? "bg-green-400/20 text-green-600"
-                          : "bg-yellow-400/20 text-yellow-600"
-                      }`}
-                    >
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-card">
+                      <Video className="h-10 w-10 text-muted/30" />
+                    </div>
+                  )}
+                  <div className="absolute top-3 right-3">
+                    <Badge variant={course.is_published ? "success" : "warning"}>
                       {course.is_published ? "Published" : "Draft"}
-                    </span>
+                    </Badge>
                   </div>
-
-                  <p className="text-sm text-muted line-clamp-2 mb-4">
-                    {course.description || "No description"}
-                  </p>
-
-                  <div className="mb-4">
-                    <p className="text-lg font-bold text-foreground">
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-80" />
+                  <div className="absolute bottom-3 left-4">
+                    <p className="text-xl font-bold text-white drop-shadow-md">
                       ₹{course.price.toFixed(2)}
                     </p>
                   </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex flex-col flex-1 p-5">
+                  <div className="mb-3">
+                    <h3 className="font-bold text-lg text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                      {course.title}
+                    </h3>
+                  </div>
+
+                  <p className="text-sm text-foreground/70 line-clamp-2 mb-6 flex-1">
+                    {course.description || <span className="italic text-muted/50">No description provided</span>}
+                  </p>
 
                   {/* Actions */}
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-2 gap-2 mt-auto pt-4 border-t border-card-border">
                     <Link
                       href={`/dashboard/courses/${course.id}/edit`}
-                      className="flex-1 rounded-lg border border-primary/30 px-3 py-2 text-sm font-medium text-primary transition-all hover:bg-primary/5 text-center"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-surface-2 px-3 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-primary/10 hover:text-primary"
                     >
+                      <Edit2 className="h-4 w-4" />
                       Edit
                     </Link>
                     <button
                       onClick={() => handleDelete(course.id)}
                       disabled={deletingId === course.id}
-                      className="flex-1 rounded-lg border border-danger/30 px-3 py-2 text-sm font-medium text-danger transition-all hover:bg-danger/5 disabled:opacity-50"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-surface-2 px-3 py-2.5 text-sm font-semibold text-danger transition-all hover:bg-danger/10 hover:text-danger disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {deletingId === course.id ? "Deleting…" : "Delete"}
+                      {deletingId === course.id ? (
+                        <span className="animate-pulse">Deleting…</span>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

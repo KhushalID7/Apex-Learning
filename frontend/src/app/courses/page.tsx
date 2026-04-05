@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { getPublishedCourses, type Course } from "@/lib/courseApi";
-import { useAuth } from "@/context/AuthContext";
+import Navbar from "@/components/Navbar";
+import CourseCard from "@/components/CourseCard";
+import LoadingScreen from "@/components/LoadingScreen";
+import EmptyState from "@/components/EmptyState";
+import AlertBanner from "@/components/AlertBanner";
+import { Search, Compass } from "lucide-react";
 
 export default function CoursesPage() {
-  const { user, profile } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,135 +39,76 @@ export default function CoursesPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <svg className="h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <p className="text-sm text-muted">Loading courses…</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Discovering courses…" />;
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-card-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            AWT Learning
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="text-sm text-muted transition-colors hover:text-foreground"
-            >
-              Dashboard
-            </Link>
-            {user && profile?.role === "teacher" && (
-              <Link
-                href="/dashboard/courses"
-                className="text-sm text-muted transition-colors hover:text-foreground"
-              >
-                My Courses
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background pb-20">
+      <Navbar />
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        {/* Page Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Browse Courses</h1>
-          <p className="text-muted mb-8">Find the perfect course to accelerate your learning</p>
+      {/* Hero Header */}
+      <div className="relative overflow-hidden border-b border-card-border bg-card/40 py-16 animate-fade-in">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+        <div className="mx-auto max-w-7xl px-6 relative z-10 text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+            Expand Your <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Horizons</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">
+            Find the perfect premium course to accelerate your career. Master new skills with our expert-led catalog.
+          </p>
 
           {/* Search Bar */}
-          <div className="flex gap-2">
+          <div className="mx-auto mt-10 max-w-2xl relative flex items-center">
+            <Search className="absolute left-4 h-5 w-5 text-muted" />
             <input
               type="text"
-              placeholder="Search courses by title or description…"
+              placeholder="Search by title, topic, or instructor…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 rounded-lg border border-card-border bg-background px-4 py-3 text-foreground placeholder:text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-2xl border border-card-border bg-background/80 py-4 pl-12 pr-4 text-foreground shadow-2xl backdrop-blur-md transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
             />
-            <button
-              onClick={fetchCourses}
-              className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white transition-all hover:bg-primary/90 active:scale-95"
-            >
-              Search
-            </button>
           </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <main className="mx-auto max-w-7xl px-6 py-12">
         {/* Error Message */}
-        {error && (
-          <div className="mb-6 rounded-lg border border-danger/30 bg-danger/10 p-4">
-            <p className="text-sm text-danger">{error}</p>
-          </div>
-        )}
+        {error && <AlertBanner message={error} variant="error" />}
+
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-foreground">
+            {searchQuery ? "Search Results" : "All Courses"}
+          </h2>
+          <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-muted">
+            {filteredCourses.length} result{filteredCourses.length !== 1 ? "s" : ""}
+          </span>
+        </div>
 
         {/* Courses Grid */}
         {filteredCourses.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-card-border p-12 text-center">
-            <p className="text-lg font-medium text-foreground mb-2">
-              {searchQuery ? "No courses found" : "No courses available yet"}
-            </p>
-            <p className="text-muted">
-              {searchQuery
-                ? "Try a different search query"
-                : "Check back soon for new courses!"}
-            </p>
-          </div>
+          <EmptyState
+            icon={<Compass className="h-10 w-10 text-primary" />}
+            title={searchQuery ? "No matching courses found" : "No courses available yet"}
+            description={searchQuery 
+              ? "We couldn't find any courses matching your search. Try adjusting your keywords." 
+              : "Check back soon as our instructors are constantly publishing new content!"}
+            actionLabel={searchQuery ? "Clear Search" : undefined}
+            onAction={() => setSearchQuery("")}
+          />
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredCourses.map((course) => (
-              <Link
-                key={course.id}
-                href={`/courses/${course.id}`}
-                className="group rounded-xl border border-card-border bg-card/60 overflow-hidden transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
-              >
-                {/* Thumbnail */}
-                {course.thumbnail_url ? (
-                  <div className="h-40 bg-gradient-to-br from-primary/20 to-accent/20 overflow-hidden">
-                    <img
-                      src={course.thumbnail_url}
-                      alt={course.title}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                    />
-                  </div>
-                ) : (
-                  <div className="h-40 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                    <span className="text-4xl">📚</span>
-                  </div>
-                )}
-
-                {/* Content */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2">
-                    {course.title}
-                  </h3>
-
-                  <p className="text-sm text-muted line-clamp-2 mb-4">
-                    {course.description || "No description"}
-                  </p>
-
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">
-                        ₹{course.price.toFixed(2)}
-                      </p>
-                    </div>
-                    <button className="rounded-lg bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-all group-hover:bg-primary group-hover:text-white">
-                      View
-                    </button>
-                  </div>
-                </div>
-              </Link>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredCourses.map((course, idx) => (
+              <div key={course.id} className={`h-full animate-slide-up delay-${(idx % 4 + 1) * 100}`}>
+                <CourseCard
+                  id={course.id}
+                  title={course.title}
+                  description={course.description || undefined}
+                  thumbnailUrl={course.thumbnail_url}
+                  price={course.price}
+                  href={`/courses/${course.id}`}
+                />
+              </div>
             ))}
           </div>
         )}

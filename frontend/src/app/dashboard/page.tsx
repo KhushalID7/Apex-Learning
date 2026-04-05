@@ -4,14 +4,19 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { getTeacherStats, type TeacherStats } from "@/lib/courseApi";
+import { getTeacherStats, getEnrolledCourses, type TeacherStats, type Course } from "@/lib/courseApi";
 import AnalyticsCharts from "@/components/AnalyticsCharts";
+import Navbar from "@/components/Navbar";
+import StatCard from "@/components/StatCard";
+import LoadingScreen from "@/components/LoadingScreen";
+import { BookOpen, Users, Compass, Library, LineChart, Award, BookCopy, Sparkles } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, profile, loading, session, signOut } = useAuth();
+  const { user, profile, loading, session } = useAuth();
   const router = useRouter();
 
   const [stats, setStats] = useState<TeacherStats | null>(null);
+  const [studentCourses, setStudentCourses] = useState<Course[]>([]);
   const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
@@ -23,6 +28,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (session?.access_token && profile?.role === "teacher") {
       fetchStats();
+    } else if (session?.access_token && profile?.role === "student") {
+      fetchStudentStats();
     }
   }, [session, profile]);
 
@@ -38,195 +45,152 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchStudentStats = async () => {
+    try {
+      setStatsLoading(true);
+      const data = await getEnrolledCourses(session!.access_token);
+      setStudentCourses(data || []);
+    } catch (err) {
+      console.error("Failed to fetch student courses", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
+
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <svg className="h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <p className="text-sm text-muted">Loading…</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading dashboard…" />;
   }
 
   if (!user || !profile) return null;
 
-  const roleConfig = {
-    student: {
-      emoji: "📚",
-      label: "Student",
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-      borderColor: "border-primary/20",
-    },
-    teacher: {
-      emoji: "🎓",
-      label: "Teacher",
-      color: "text-accent",
-      bgColor: "bg-accent/10",
-      borderColor: "border-accent/20",
-    },
-    master: {
-      emoji: "👑",
-      label: "Master Admin",
-      color: "text-yellow-400",
-      bgColor: "bg-yellow-400/10",
-      borderColor: "border-yellow-400/20",
-    },
-  };
-
-  const rc = roleConfig[profile.role] || roleConfig.student;
-
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-card-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/dashboard" className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            AWT Learning
-          </Link>
-          <div className="flex items-center gap-6">
+    <div className="min-h-screen bg-background pb-20">
+      <Navbar />
+
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        {/* Welcome Section */}
+        <div className="relative mb-10 rounded-3xl border border-card-border bg-card/40 p-10 overflow-hidden shadow-2xl animate-fade-in">
+          <div className="absolute top-0 right-0 -mt-20 -mr-20 h-64 w-64 rounded-full bg-primary/10 blur-[80px] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-64 w-64 rounded-full bg-accent/10 blur-[80px] pointer-events-none" />
+          
+          <div className="relative z-10">
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
+              {getGreeting()}, <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{profile.full_name.split(' ')[0]}</span>
+            </h1>
+            <p className="mt-3 text-lg text-muted max-w-2xl">
+              {profile.role === "teacher" 
+                ? "Here is what's happening with your courses today." 
+                : "Ready to pick up where you left off?"}
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Stats Grid */}
+        <div className="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {profile.role === "teacher" ? (
+            <>
+              <StatCard 
+                label="Courses Created" 
+                value={statsLoading ? "..." : stats?.total_courses || "0"} 
+                icon={<BookCopy className="h-6 w-6" />} 
+              />
+              <StatCard 
+                label="Total Students" 
+                value={statsLoading ? "..." : stats?.total_enrollments || "0"} 
+                icon={<Users className="h-6 w-6" />} 
+                trend="15%" 
+                trendUp={true} 
+              />
+              <StatCard 
+                label="Revenue" 
+                value={statsLoading ? "..." : `₹${stats?.total_revenue || "0"}`} 
+                icon={<span className="font-bold text-xl">₹</span>} 
+              />
+              <StatCard 
+                label="Avg. Engagement" 
+                value={statsLoading ? "..." : `${stats?.average_engagement || "0"}%`} 
+                icon={<LineChart className="h-6 w-6" />} 
+              />
+            </>
+          ) : (
+            <>
+              <StatCard 
+                label="Enrolled Courses" 
+                value={statsLoading ? "..." : studentCourses.length.toString()} 
+                icon={<BookOpen className="h-6 w-6" />} 
+              />
+              <StatCard 
+                label="Completed" 
+                value="0" 
+                icon={<Award className="h-6 w-6" />} 
+              />
+              <StatCard 
+                label="Certificates" 
+                value="0" 
+                icon={<Award className="h-6 w-6" />} 
+              />
+              <StatCard 
+                label="Learning Points" 
+                value="0" 
+                icon={<Sparkles className="h-6 w-6" />} 
+              />
+            </>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-12">
+          <h2 className="mb-6 text-xl font-bold text-foreground">Quick Actions</h2>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {profile.role === "teacher" && (
-              <Link
-                href="/dashboard/courses"
-                className="text-sm text-muted transition-colors hover:text-foreground"
-              >
-                My Courses
+              <Link href="/dashboard/courses" className="card-hover group flex items-center gap-5 rounded-2xl border border-card-border bg-card/60 p-6 animate-slide-up delay-100">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 text-primary transition-colors group-hover:from-primary/20 group-hover:to-accent/20">
+                  <Library className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">Manage Courses</h3>
+                  <p className="text-sm text-muted">Create or edit your courses</p>
+                </div>
               </Link>
             )}
-            <Link
-              href="/courses"
-              className="text-sm text-muted transition-colors hover:text-foreground"
-            >
-              Browse Courses
-            </Link>
-            <div className="flex items-center gap-4">
-              <span className={`rounded-full border px-3 py-1 text-xs font-medium ${rc.color} ${rc.bgColor} ${rc.borderColor}`}>
-                {rc.emoji} {rc.label}
-              </span>
-              <button
-                onClick={signOut}
-                className="rounded-lg border border-card-border px-4 py-2 text-sm text-muted transition-all hover:border-danger/30 hover:text-danger hover:bg-danger/5"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        {/* Welcome Card */}
-        <div className="rounded-2xl border border-card-border bg-card/80 p-8 shadow-xl shadow-black/10">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted">Welcome back,</p>
-              <h2 className="mt-1 text-3xl font-bold text-foreground">
-                {profile.full_name}
-              </h2>
-              <p className="mt-2 text-muted">
-                {profile.role === "teacher"
-                  ? "Ready to create some amazing courses?"
-                  : profile.role === "master"
-                  ? "Platform administration overview"
-                  : "Continue your learning journey"}
-              </p>
-            </div>
-            <div className="text-5xl">{rc.emoji}</div>
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
-          {[
-            {
-              label: profile.role === "teacher" ? "Courses Created" : "Enrolled Courses",
-              value: profile.role === "teacher" ? (statsLoading ? "..." : stats?.total_courses || "0") : "0",
-              icon: "📖",
-            },
-            {
-              label: profile.role === "teacher" ? "Total Students" : "Completed",
-              value: profile.role === "teacher" ? (statsLoading ? "..." : stats?.total_enrollments || "0") : "0",
-              icon: "👥",
-            },
-            {
-              label: profile.role === "teacher" ? "Revenue" : "Certificates",
-              value: profile.role === "teacher" ? (statsLoading ? "..." : `₹${stats?.total_revenue || "0"}`) : "0",
-              icon: "💰",
-            },
-            {
-              label: profile.role === "teacher" ? "Avg. Engagement" : "Points",
-              value: profile.role === "teacher" ? (statsLoading ? "..." : `${stats?.average_engagement || "0"}%`) : "0",
-              icon: "📈",
-            },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-xl border border-card-border bg-card/60 p-6 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted">{stat.label}</p>
-                  <p className="mt-1 text-2xl font-bold">{stat.value}</p>
+            
+            {profile.role === "student" && (
+              <Link href="/dashboard/learning" className="card-hover group flex items-center gap-5 rounded-2xl border border-card-border bg-card/60 p-6 animate-slide-up delay-100">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent/10 to-blue-500/10 text-accent transition-colors group-hover:from-accent/20 group-hover:to-blue-500/20">
+                  <BookOpen className="h-6 w-6" />
                 </div>
-                <span className="text-3xl">{stat.icon}</span>
+                <div>
+                  <h3 className="font-bold text-foreground group-hover:text-accent transition-colors">My Learning</h3>
+                  <p className="text-sm text-muted">Continue your enrolled courses</p>
+                </div>
+              </Link>
+            )}
+
+            <Link href="/courses" className="card-hover group flex items-center gap-5 rounded-2xl border border-card-border bg-card/60 p-6 animate-slide-up delay-200">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 text-purple-400 transition-colors group-hover:from-purple-500/20 group-hover:to-pink-500/20">
+                <Compass className="h-6 w-6" />
               </div>
-            </div>
-          ))}
+              <div>
+                <h3 className="font-bold text-foreground group-hover:text-purple-400 transition-colors">Discover Catalog</h3>
+                <p className="text-sm text-muted">Find new skills to learn</p>
+              </div>
+            </Link>
+          </div>
         </div>
 
         {/* Analytics Charts */}
         {profile.role === "teacher" && stats && !statsLoading && (
-          <AnalyticsCharts stats={stats} />
+          <div className="relative z-10">
+            <AnalyticsCharts stats={stats} />
+          </div>
         )}
-
-        {/* Quick Actions / Navigation */}
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 text-left">
-          {profile.role === "teacher" && (
-            <Link
-              href="/dashboard/courses"
-              className="rounded-xl border border-card-border bg-card/60 p-6 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted">Manage Courses</p>
-                  <p className="mt-1 text-lg font-bold text-foreground">My Courses</p>
-                </div>
-                <span className="text-3xl">📚</span>
-              </div>
-            </Link>
-          )}
-          {profile.role === "student" && (
-            <Link
-              href="/dashboard/learning"
-              className="rounded-xl border border-card-border bg-card/60 p-6 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted">Continue Learning</p>
-                  <p className="mt-1 text-lg font-bold text-foreground">My Learning</p>
-                </div>
-                <span className="text-3xl">🎒</span>
-              </div>
-            </Link>
-          )}
-          <Link
-            href="/courses"
-            className="rounded-xl border border-card-border bg-card/60 p-6 transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted">Discover</p>
-                <p className="mt-1 text-lg font-bold text-foreground">Course Catalog</p>
-              </div>
-              <span className="text-3xl">🔍</span>
-            </div>
-          </Link>
-        </div>
       </main>
     </div>
   );
