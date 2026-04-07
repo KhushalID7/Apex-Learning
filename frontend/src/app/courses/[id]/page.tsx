@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { getCourseById, enrollInCourse, checkEnrollmentStatus, type Course } from "@/lib/courseApi";
+import { getCourseById, enrollInCourse, checkEnrollmentStatus, createRazorpayOrder, verifyRazorpayPayment, type Course } from "@/lib/courseApi";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -52,6 +52,17 @@ export default function CourseDetailPage() {
     }
   }, [courseId, session, profile]);
 
+  useEffect(() => {
+    // Inject Razorpay checkout script
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   const handleEnroll = async () => {
     if (!user) {
       router.push("/login");
@@ -62,11 +73,55 @@ export default function CourseDetailPage() {
     try {
       setEnrolling(true);
       setEnrollError(null);
-      await enrollInCourse(courseId, session.access_token);
-      setIsEnrolled(true);
+
+      if (course?.price && course.price > 0) {
+        // Razorpay Check-out Flow
+        const order = await createRazorpayOrder(courseId, session.access_token);
+        
+        const options = {
+          key: order.key_id,
+          amount: order.amount,
+          currency: order.currency,
+          name: "AWT Learning",
+          description: course.title,
+          order_id: order.id,
+          handler: async function (response: any) {
+            try {
+              setEnrolling(true);
+              setEnrollError(null);
+              await verifyRazorpayPayment(courseId, response, session.access_token);
+              setIsEnrolled(true);
+            } catch (err) {
+              setEnrollError(err instanceof Error ? err.message : "Payment verification failed");
+              setEnrolling(false);
+            }
+          },
+          prefill: {
+            name: profile?.full_name || "Student",
+            email: user.email || ""
+          },
+          theme: {
+            color: "#6366f1"
+          },
+          modal: {
+            ondismiss: function() {
+              setEnrolling(false);
+            }
+          }
+        };
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (response: any){
+           setEnrollError(response.error.description);
+           setEnrolling(false);
+        });
+        rzp.open();
+      } else {
+        // Free Enrollment Flow
+        await enrollInCourse(courseId, session.access_token);
+        setIsEnrolled(true);
+      }
     } catch (err) {
-      setEnrollError(err instanceof Error ? err.message : "Failed to enroll");
-    } finally {
+      setEnrollError(err instanceof Error ? err.message : "Failed to initiate enrollment");
       setEnrolling(false);
     }
   };

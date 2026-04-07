@@ -567,3 +567,25 @@ export async function toggleDoubtStatus(doubtId: string, token: string): Promise
   if (!response.ok) throw new Error("Failed to update status");
   return response.json();
 }
+
+// ─────────────────── Payment System ───────────────────
+
+export async function createRazorpayOrder(courseId: string, token: string) {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/payment/create-order`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!response.ok) throw new Error((await response.json()).detail || "Failed to create order");
+  return response.json();
+}
+
+export async function verifyRazorpayPayment(courseId: string, payload: any, token: string) {
+  const response = await fetch(`${API_BASE_URL}/courses/${courseId}/payment/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error((await response.json()).detail || "Payment verification failed");
+  return response.json();
+}
+

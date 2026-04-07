@@ -31,3 +31,15 @@ class CourseResponse(BaseModel):
     thumbnail_url: Optional[str] = None
     is_published: bool
     created_at: str
+
+class PaymentOrderResponse(BaseModel):
+    id: str
+    amount: int
+    currency: str
+    receipt: str
+    key_id: str
+
+class PaymentVerification(BaseModel):
+    razorpay_payment_id: str
+    razorpay_order_id: str
+    razorpay_signature: str

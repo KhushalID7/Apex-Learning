@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from typing import List, Dict, Any
 from app.auth.dependencies import get_current_user, require_role
+from app.limiter import limiter
 from app.supabase_client import supabase, supabase_admin
 from app.utils.email import send_new_doubt_email
 from app.doubts.schemas import (
@@ -11,7 +12,9 @@ from app.doubts.schemas import (
 router = APIRouter(tags=["Doubts"])
 
 @router.post("/courses/{course_id}/doubts", response_model=DoubtResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("3/minute")
 async def create_doubt(
+    request: Request,
     course_id: str,
     payload: DoubtCreate,
     current_user: dict = Depends(require_role("student"))

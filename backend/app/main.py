@@ -1,5 +1,10 @@
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
+from app.limiter import limiter, rate_limit_exceeded_handler
 from app.auth.router import router as auth_router
 from app.courses.router import router as courses_router
 from app.courses.stats_router import router as stats_router
@@ -12,6 +17,10 @@ app = FastAPI(
     version="0.1.0",
     description="Backend API for the AWT Learning Platform",
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # ---------- CORS ----------
 # Allow the Next.js frontend during local development
@@ -36,3 +45,9 @@ app.include_router(doubts_router)
 async def health_check():
     """Simple health-check endpoint to verify the server is running."""
     return {"status": "ok"}
+
+
+@app.get("/", response_class=JSONResponse)
+async def root():
+    """Root endpoint – returns a friendly message or redirects to /health."""
+    return {"message": "Welcome to the AWT Learning Platform API. Use /health for a quick status check."}

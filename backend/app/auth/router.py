@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from app.auth.schemas import RegisterRequest, LoginRequest, UserResponse
 from app.auth.dependencies import get_current_user
+from app.limiter import limiter
 from app.supabase_client import supabase
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -57,7 +58,8 @@ async def register(payload: RegisterRequest):
 
 
 @router.post("/login")
-async def login(payload: LoginRequest):
+@limiter.limit("5/minute")
+async def login(request: Request, payload: LoginRequest):
     """Sign in with email + password and return session tokens."""
 
     try:

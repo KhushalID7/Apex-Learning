@@ -1,9 +1,17 @@
-from fastapi import APIRouter, HTTPException, status, Depends
-from app.courses.schemas import CourseCreate, CourseUpdate, CourseResponse
+from fastapi import APIRouter, HTTPException, status, Depends, Request
+from app.courses.schemas import (
+    CourseCreate, CourseUpdate, CourseResponse,
+    PaymentOrderResponse, PaymentVerification
+)
 from app.auth.dependencies import get_current_user, require_role
+from app.limiter import limiter
 from app.supabase_client import supabase, supabase_admin
+from app.config import get_settings
+import razorpay
 from typing import List
 
+settings = get_settings()
+razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)) if settings.RAZORPAY_KEY_ID else None
 router = APIRouter(prefix="/courses", tags=["Courses"])
 
 
@@ -283,9 +291,14 @@ async def enroll_in_course(
     """Enroll a student in a course."""
     try:
         # Check if course exists and is published
-        course_check = supabase.table("courses").select("id, is_published").eq("id", course_id).single().execute()
+        course_check = supabase.table("courses").select("id, is_published, price").eq("id", course_id).single().execute()
         if not course_check.data or not course_check.data.get("is_published"):
             raise HTTPException(status_code=404, detail="Course not found or not published")
+
+        # Check if the course is free
+        price = course_check.data.get("price", 0)
+        if price > 0:
+            raise HTTPException(status_code=400, detail="This course requires payment. Please use the checkout flow.")
 
         # Insert enrollment
         response = supabase_admin.table("enrollments").insert({
@@ -303,6 +316,107 @@ async def enroll_in_course(
     except Exception as e:
         if "duplicate key value" in str(e) or "enrollments_student_id_course_id_key" in str(e):
             raise HTTPException(status_code=400, detail="Already enrolled in this course")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/{course_id}/payment/create-order", response_model=PaymentOrderResponse)
+@limiter.limit("5/minute")
+async def create_payment_order(
+    request: Request,
+    course_id: str,
+    current_user: dict = Depends(require_role("student"))
+):
+    """Create a Razorpay order for a paid course."""
+    if not razorpay_client:
+        raise HTTPException(status_code=500, detail="Payment Gateway not configured")
+        
+    try:
+        course_check = supabase.table("courses").select("id, is_published, price").eq("id", course_id).single().execute()
+        if not course_check.data or not course_check.data.get("is_published"):
+            raise HTTPException(status_code=404, detail="Course not found or not published")
+            
+        price = course_check.data.get("price", 0)
+        if price <= 0:
+            raise HTTPException(status_code=400, detail="This course is free, use regular enrollment")
+            
+        enroll_check = supabase_admin.table("enrollments").select("id").eq("course_id", course_id).eq("student_id", current_user["id"]).execute()
+        if enroll_check.data:
+            raise HTTPException(status_code=400, detail="Already enrolled")
+            
+        amount_in_paise = int(price * 100)
+        order_data = {
+            "amount": amount_in_paise,
+            "currency": "INR",
+            "receipt": f"rcpt_{course_id[:8]}_{current_user['id'][:8]}"
+        }
+        order = razorpay_client.order.create(data=order_data)
+        
+        return {
+            "id": order["id"],
+            "amount": order["amount"],
+            "currency": order["currency"],
+            "receipt": order["receipt"],
+            "key_id": settings.RAZORPAY_KEY_ID
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/{course_id}/payment/verify")
+@limiter.limit("5/minute")
+async def verify_payment(
+    request: Request,
+    course_id: str,
+    payload: PaymentVerification,
+    current_user: dict = Depends(require_role("student"))
+):
+    """Verify Razorpay signature and enroll student."""
+    if not razorpay_client:
+        raise HTTPException(status_code=500, detail="Payment Gateway not configured")
+        
+    try:
+        params_dict = {
+            'razorpay_order_id': payload.razorpay_order_id,
+            'razorpay_payment_id': payload.razorpay_payment_id,
+            'razorpay_signature': payload.razorpay_signature
+        }
+        
+        try:
+            razorpay_client.utility.verify_payment_signature(params_dict)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Signature verification failed")
+            
+        course_check = supabase.table("courses").select("price").eq("id", course_id).single().execute()
+        price = course_check.data.get("price", 0) if course_check.data else 0
+            
+        payment_data = {
+            "course_id": course_id,
+            "student_id": current_user["id"],
+            "razorpay_order_id": payload.razorpay_order_id,
+            "razorpay_payment_id": payload.razorpay_payment_id,
+            "razorpay_signature": payload.razorpay_signature,
+            "amount": price,
+            "status": "success"
+        }
+        
+        try:
+            supabase_admin.table("payments").insert(payment_data).execute()
+        except Exception:
+            pass # Ignore if duplicate order_id
+            
+        try:
+            supabase_admin.table("enrollments").insert({
+                "student_id": current_user["id"],
+                "course_id": course_id
+            }).execute()
+        except Exception as e:
+            if "duplicate key value" not in str(e) and "enrollments_student_id_course_id_key" not in str(e):
+                raise
+                
+        return {"message": "Payment successful and enrolled"}
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
