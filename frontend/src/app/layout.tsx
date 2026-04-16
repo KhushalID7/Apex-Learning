@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import PageTransition from "@/components/PageTransition";
 
 const inter = Inter({
@@ -21,13 +22,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" data-theme="dark">
       <body className={`${inter.variable} antialiased font-sans`}>
-        <AuthProvider>
-          <PageTransition>
-            {children}
-          </PageTransition>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <PageTransition>
+              {children}
+            </PageTransition>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useState } from "react";
 import {
   LayoutDashboard,
@@ -15,10 +16,13 @@ import {
   Library,
   Crown,
   Sparkles,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 export default function Navbar() {
   const { profile, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -118,6 +122,20 @@ export default function Navbar() {
               <RoleIcon className="h-3.5 w-3.5" />
               {rc.label}
             </div>
+
+            {/* Theme Toggle */}
+            <button
+              id="theme-toggle-btn"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-card-border text-muted transition-all hover:text-foreground hover:bg-surface-2 hover:border-primary/30"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </button>
 
             {/* User Avatar + Sign Out */}
             <div className="flex items-center gap-2">

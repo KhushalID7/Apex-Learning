@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-:root {
+/* ─── Dark Theme (default / SSR fallback) ─── */
+:root,
+[data-theme="dark"] {
   --background: #06060a;
   --foreground: #eaeaf0;
   --card: #0e0e16;
@@ -23,6 +25,32 @@
   --warning-muted: rgba(255, 171, 64, 0.12);
   --glow-primary: rgba(124, 92, 252, 0.35);
   --glow-accent: rgba(0, 212, 255, 0.25);
+}
+
+/* ─── Light Theme ─── */
+[data-theme="light"] {
+  --background: #f5f5fa;
+  --foreground: #111118;
+  --card: #ffffff;
+  --card-hover: #f0f0f8;
+  --card-border: #dddde8;
+  --surface: #f8f8fc;
+  --surface-2: #ededf5;
+  --primary: #6540f0;
+  --primary-hover: #7c5cfc;
+  --primary-muted: rgba(101, 64, 240, 0.10);
+  --accent: #0099cc;
+  --accent-muted: rgba(0, 153, 204, 0.10);
+  --muted: #7272a0;
+  --muted-light: #9090b8;
+  --danger: #e0304a;
+  --danger-muted: rgba(224, 48, 74, 0.10);
+  --success: #00a855;
+  --success-muted: rgba(0, 168, 85, 0.10);
+  --warning: #d97706;
+  --warning-muted: rgba(217, 119, 6, 0.10);
+  --glow-primary: rgba(101, 64, 240, 0.20);
+  --glow-accent: rgba(0, 153, 204, 0.15);
 }
 
 @theme inline {
@@ -53,6 +81,11 @@
 
 * {
   box-sizing: border-box;
+}
+
+/* ─── Smooth theme transition ─── */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 html {
@@ -93,11 +126,21 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+[data-theme="light"] .glass {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
 .glass-strong {
   background: rgba(14, 14, 22, 0.85);
   backdrop-filter: blur(30px) saturate(1.4);
   -webkit-backdrop-filter: blur(30px) saturate(1.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .glass-strong {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* ─── Keyframes ─── */

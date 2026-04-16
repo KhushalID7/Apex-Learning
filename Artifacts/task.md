@@ -64,3 +64,13 @@
 - [ ] Backend: WeasyPrint generates PDF → upload to storage
 - [ ] Frontend: download certificate button
 - [ ] Test: 100% progress → certificate generated & downloadable
+
+- [ ] Create `SkeletonLoader.tsx` component in `frontend/src/components`
+- [ ] Refactor data‑heavy pages (e.g., `courses`, `dashboard`) to use SWR with skeleton fallback
+- [ ] Add dynamic imports for heavy components (`AnalyticsCharts`, `QASection`)
+- [ ] Update `next.config.ts` for image optimization, compression, and asset prefix
+- [ ] Install Redis client (`redis` or `aioredis`) in backend
+- [ ] Create `backend/app/cache.py` with async get/set helpers and LRU config cache
+- [ ] Wrap course list and stats endpoints with cache (TTL 60s)
+- [ ] Add `GZipMiddleware` to FastAPI app in `backend/app/main.py`
+- [ ] Verify performance improvements (bundle size, response headers, load times)
