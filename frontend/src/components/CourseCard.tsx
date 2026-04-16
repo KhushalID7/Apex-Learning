@@ -20,8 +20,8 @@ export default function CourseCard({
   title, description, thumbnailUrl, instructor, price, isEnrolled, status, href
 }: CourseCardProps) {
   return (
-    <Link href={href} className="card-hover group flex flex-col overflow-hidden rounded-2xl border border-card-border bg-card/60 animate-fade-in relative z-10 w-full h-full">
-      <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 shrink-0">
+    <Link href={href} className="card-hover group flex flex-col overflow-hidden rounded-2xl border border-card-border bg-card animate-fade-in relative z-10 w-full h-full shadow-sm">
+      <div className="relative aspect-video w-full overflow-hidden bg-surface-2 shrink-0">
         {thumbnailUrl ? (
           <img src={thumbnailUrl} alt={title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
@@ -29,7 +29,7 @@ export default function CourseCard({
             <Play className="h-12 w-12 text-muted/30" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-60" />
+
         
         {/* Badges Overlay */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-2">
@@ -39,7 +39,7 @@ export default function CourseCard({
       </div>
       
       <div className="flex flex-1 flex-col p-5">
-        <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+        <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-foreground font-display group-hover:text-primary transition-colors">
           {title}
         </h3>
         <p className="mb-4 line-clamp-2 flex-1 text-sm text-muted">

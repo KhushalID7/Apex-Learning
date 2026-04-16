@@ -105,10 +105,10 @@ export default function TeacherCoursesPage() {
             {courses.map((course, idx) => (
               <div
                 key={course.id}
-                className={`group flex flex-col rounded-2xl border border-card-border bg-card/40 overflow-hidden transition-all hover:bg-card/60 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30 hover:-translate-y-1 animate-slide-up delay-${(idx % 4 + 1) * 100}`}
+                className={`group flex flex-col rounded-2xl border border-card-border bg-card overflow-hidden transition-all hover:border-primary-muted hover:shadow-lg hover:-translate-y-1 animate-slide-up shadow-sm delay-${(idx % 4 + 1) * 100}`}
               >
                 {/* Thumbnail Header */}
-                <div className="relative h-48 bg-gradient-to-br from-surface to-surface-2 overflow-hidden shrink-0">
+                <div className="relative h-48 bg-surface-2 overflow-hidden shrink-0">
                   {course.thumbnail_url ? (
                     <img
                       src={course.thumbnail_url}
@@ -125,9 +125,9 @@ export default function TeacherCoursesPage() {
                       {course.is_published ? "Published" : "Draft"}
                     </Badge>
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-80" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
                   <div className="absolute bottom-3 left-4">
-                    <p className="text-xl font-bold text-white drop-shadow-md">
+                    <p className="text-xl font-bold text-white drop-shadow-md font-display">
                       ₹{course.price.toFixed(2)}
                     </p>
                   </div>
@@ -136,12 +136,12 @@ export default function TeacherCoursesPage() {
                 {/* Content */}
                 <div className="flex flex-col flex-1 p-5">
                   <div className="mb-3">
-                    <h3 className="font-bold text-lg text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                    <h3 className="font-bold text-lg text-foreground font-display line-clamp-2 leading-tight group-hover:text-primary transition-colors">
                       {course.title}
                     </h3>
                   </div>
 
-                  <p className="text-sm text-foreground/70 line-clamp-2 mb-6 flex-1">
+                  <p className="text-sm text-foreground/70 font-sans line-clamp-2 mb-6 flex-1">
                     {course.description || <span className="italic text-muted/50">No description provided</span>}
                   </p>
 

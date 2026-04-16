@@ -76,13 +76,10 @@ export default function DashboardPage() {
 
       <main className="mx-auto max-w-7xl px-6 py-10">
         {/* Welcome Section */}
-        <div className="relative mb-10 rounded-3xl border border-card-border bg-card/40 p-10 overflow-hidden shadow-2xl animate-fade-in">
-          <div className="absolute top-0 right-0 -mt-20 -mr-20 h-64 w-64 rounded-full bg-primary/10 blur-[80px] pointer-events-none" />
-          <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-64 w-64 rounded-full bg-accent/10 blur-[80px] pointer-events-none" />
-          
+        <div className="relative mb-10 rounded-3xl border border-card-border bg-card p-10 overflow-hidden shadow-sm animate-fade-in">
           <div className="relative z-10">
-            <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
-              {getGreeting()}, <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{profile.full_name.split(' ')[0]}</span>
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground font-display">
+              {getGreeting()}, <span className="text-primary">{profile.full_name.split(' ')[0]}</span>
             </h1>
             <p className="mt-3 text-lg text-muted max-w-2xl">
               {profile.role === "teacher" 
@@ -150,35 +147,35 @@ export default function DashboardPage() {
           <h2 className="mb-6 text-xl font-bold text-foreground">Quick Actions</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {profile.role === "teacher" && (
-              <Link href="/dashboard/courses" className="card-hover group flex items-center gap-5 rounded-2xl border border-card-border bg-card/60 p-6 animate-slide-up delay-100">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 text-primary transition-colors group-hover:from-primary/20 group-hover:to-accent/20">
+              <Link href="/dashboard/courses" className="card-hover group flex items-center gap-5 rounded-2xl border border-card-border bg-card p-6 animate-slide-up delay-100 shadow-sm">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary-muted text-primary transition-colors group-hover:bg-primary group-hover:text-white">
                   <Library className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">Manage Courses</h3>
+                  <h3 className="font-bold text-foreground font-display group-hover:text-primary transition-colors">Manage Courses</h3>
                   <p className="text-sm text-muted">Create or edit your courses</p>
                 </div>
               </Link>
             )}
             
             {profile.role === "student" && (
-              <Link href="/dashboard/learning" className="card-hover group flex items-center gap-5 rounded-2xl border border-card-border bg-card/60 p-6 animate-slide-up delay-100">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent/10 to-blue-500/10 text-accent transition-colors group-hover:from-accent/20 group-hover:to-blue-500/20">
+              <Link href="/dashboard/learning" className="card-hover group flex items-center gap-5 rounded-2xl border border-card-border bg-card p-6 animate-slide-up delay-100 shadow-sm">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-accent-muted text-accent transition-colors group-hover:bg-accent group-hover:text-white">
                   <BookOpen className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-foreground group-hover:text-accent transition-colors">My Learning</h3>
+                  <h3 className="font-bold text-foreground font-display group-hover:text-accent transition-colors">My Learning</h3>
                   <p className="text-sm text-muted">Continue your enrolled courses</p>
                 </div>
               </Link>
             )}
 
-            <Link href="/courses" className="card-hover group flex items-center gap-5 rounded-2xl border border-card-border bg-card/60 p-6 animate-slide-up delay-200">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 text-purple-400 transition-colors group-hover:from-purple-500/20 group-hover:to-pink-500/20">
+            <Link href="/courses" className="card-hover group flex items-center gap-5 rounded-2xl border border-card-border bg-card p-6 animate-slide-up delay-200 shadow-sm">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-600 transition-colors group-hover:bg-purple-600 group-hover:text-white">
                 <Compass className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-bold text-foreground group-hover:text-purple-400 transition-colors">Discover Catalog</h3>
+                <h3 className="font-bold text-foreground font-display group-hover:text-purple-600 transition-colors">Discover Catalog</h3>
                 <p className="text-sm text-muted">Find new skills to learn</p>
               </div>
             </Link>

@@ -76,14 +76,14 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="glass-strong sticky top-0 z-50 border-b border-white/[0.04]">
+      <header className="bg-card sticky top-0 z-50 border-b border-card-border shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent/80">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
-            <span className="text-lg font-bold gradient-text hidden sm:inline">
+            <span className="text-lg font-bold text-foreground font-display hidden sm:inline">
               AWT Learning
             </span>
           </Link>
