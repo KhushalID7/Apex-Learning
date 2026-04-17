@@ -1,0 +1,23 @@
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+dist/
+build/
+*.egg-info/
+.git
+.gitignore
+.env
+.env.local
+.antigravityignore
+render.yaml
+Dockerfile
+README.md
+SQL queries/
+check_schema.py
+.vscode/
+.idea/

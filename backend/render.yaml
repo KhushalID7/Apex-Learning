@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: awt-learning-backend
+    runtime: docker
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: AZURE_STORAGE_CONNECTION_STRING
+        sync: false
+      - key: AZURE_CONTAINER_NAME
+        value: project-files
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: "http://localhost:3000"
+      - key: UPSTASH_REDIS_URL
+        sync: false
