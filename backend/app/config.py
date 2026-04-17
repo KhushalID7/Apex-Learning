@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     # Resend Email
     RESEND_API_KEY: str = ""
 
-    # CORS
-    ALLOWED_ORIGINS: str = "http://localhost:3000"
+    # CORS (comma-separated origins)
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001"
 
     class Config:
         env_file = ".env"

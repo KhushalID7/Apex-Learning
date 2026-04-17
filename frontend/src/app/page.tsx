@@ -19,7 +19,8 @@ export default function Home() {
   }, [loading, user, router]);
 
   useEffect(() => {
-    fetch(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/health")
+    const baseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+    fetch(`${baseUrl}/health`)
       .then((res) => {
         if (!res.ok) throw new Error();
         return res.json();
