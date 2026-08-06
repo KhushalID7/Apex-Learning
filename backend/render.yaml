@@ -21,7 +21,7 @@ services:
         sync: false
       - key: RESEND_API_KEY
         sync: false
-      - key: ALLOWED_ORIGINS
-        value: "http://localhost:3000"
+      - key: FRONTEND_URL
+        value: "https://apex-learning-snowy.vercel.app"
       - key: UPSTASH_REDIS_URL
         sync: false

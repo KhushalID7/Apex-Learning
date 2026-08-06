@@ -28,7 +28,8 @@ app.add_middleware(SlowAPIMiddleware)
 
 # ---------- CORS ----------
 # Use origins from settings (comma-separated string converted to list)
-origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",")]
+# ---------- CORS ----------
+origins = [o.strip() for o in settings.FRONTEND_URL.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
