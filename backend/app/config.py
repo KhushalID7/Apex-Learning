@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = ""
 
     # CORS (comma-separated origins)
-    ALLOWED_ORIGINS: str = "http://localhost:3000"
+    FRONTEND_URL: str = "http://localhost:3000,http://localhost:3001"
 
     class Config:
         env_file = ".env"

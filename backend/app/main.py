@@ -27,8 +27,6 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 # ---------- CORS ----------
-# Use origins from settings (comma-separated string converted to list)
-# ---------- CORS ----------
 origins = [o.strip() for o in settings.FRONTEND_URL.split(",") if o.strip()]
 
 app.add_middleware(
